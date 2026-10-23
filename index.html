@@ -22,9 +22,9 @@ html,body{margin:0;background:var(--ob);color:var(--tx);font-family:Inter,system
 body{padding-bottom:calc(74px + env(safe-area-inset-bottom))}
 button{font-family:inherit;cursor:pointer}
 .disp{font-family:Unbounded,Inter,sans-serif;font-weight:800;letter-spacing:.5px;text-transform:uppercase}
-#splash{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 0%,#1d2a3f 0%,var(--ob) 60%);transition:opacity .4s}
+#splash{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--ob);transition:opacity .4s}
 #splash.hide{opacity:0;pointer-events:none}
-#splash img{width:62%;max-width:280px}
+#splash img{width:80%;max-width:340px;-webkit-mask-image:radial-gradient(circle at 50% 50%,#000 60%,transparent 72%);mask-image:radial-gradient(circle at 50% 50%,#000 60%,transparent 72%)}
 .wm{display:flex;flex-direction:column;align-items:center;margin-top:10px}
 .wm b{font-family:Unbounded;font-weight:900;font-size:34px;line-height:1;letter-spacing:1px}
 .wm i{font-style:normal;font-family:Unbounded;font-weight:800;font-size:26px;color:var(--li);letter-spacing:3px}
@@ -113,7 +113,7 @@ nav button.on{color:var(--li)}
 </head>
 <body>
 <div id="splash">
-  <img src="logo.png" alt="" onerror="this.style.display='none'">
+  <img src="logo.png" alt="" onload="document.getElementById('wmSplash').style.display='none'" onerror="this.style.display='none'">
   <div class="wm" id="wmSplash"><b>SUNDAY</b><i>— LOCKER —</i><small>FANTASY FOOTBALL</small></div>
   <div class="tag">YOUR ROSTER.<br><span>YOUR SUNDAY.</span></div>
   <div class="load"><i></i></div>
