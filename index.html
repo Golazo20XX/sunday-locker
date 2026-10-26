@@ -116,6 +116,7 @@ nav button.on{color:var(--li)}
 .mt{padding:10px 2px;border-top:1px solid var(--ln)}.mt:first-child{border-top:0}.mt.me{background:#151d10;border-radius:12px;padding:10px 8px;border:1px solid #2e3d1c}.mtr{display:flex;justify-content:space-between;font-size:13px}.mtr .n{font-weight:600}.pbar{height:6px;border-radius:3px;background:#2a3140;margin:6px 0;overflow:hidden}.pbar i{display:block;height:100%;background:var(--li)}
 .vg{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:6px;text-align:center}.vg div{background:var(--ob);border:1px solid var(--ln);border-radius:8px;padding:3px 0;font-size:12px}.vg small{display:block;font-size:9px;color:var(--mu)}
 .kv3{display:grid;grid-template-columns:1fr auto auto;gap:8px 12px}.kv3 b{text-align:right}
+.row.sel{background:#1a2313;border-radius:10px}.ck{color:var(--li);font-weight:800;font-size:16px;width:22px;text-align:center} select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--ln);background:var(--ob);color:var(--tx);font-size:14px;margin:4px 0 6px;font-family:inherit}  
 </style>
 </head>
 <body>
@@ -187,6 +188,48 @@ function cmpView(){var sel=S.cmp||(S.cmp=[]);var q=(S.sub.cq||'').toLowerCase();
   t+='<tr><td>'+m[0]+'</td>'+v.map(function(x){var f=m[3]||n;return '<td class="'+(best!==null&&x===best?'best':'')+'">'+(x===''||x==null?'—':f(x))+'</td>'}).join('')+'</tr>'});
  t+='</table></div>';
  return h+card('Comparación ('+sel.length+'/4)',t+(sel.length<2?'<div class="note">Agrega al menos otro jugador.</div>':''))}
+function taInit(){S.ta=S.ta||{team:'',give:[],get:[]};return S.ta}
+function taTeam(v){taInit().team=v;S.ta.get=[];render()}
+function taToggle(side,i){var ta=taInit();var nm=window['_ta_'+side][i];var a=ta[side];var k=a.indexOf(nm);if(k>=0)a.splice(k,1);else if(a.length<5)a.push(nm);render()}
+function taClear(){var ta=taInit();ta.give=[];ta.get=[];render()}
+function taPre(i){var r=window._sugs[i];S.ta={team:r.Contraparte,give:String(r.Doy).split(' + '),get:String(r.Recibo).split(' + ')};S.sub.tr='Analizar';render();scrollTo(0,0)}
+function lineup(list,slots,key){var used={},tot=0,sel=[];var fx=function(s){return s==='FLEX'||s==='SFLEX'||s==='SUPER_FLEX'};var order=slots.filter(function(s){return !fx(s)}).concat(slots.filter(function(s){return s==='FLEX'})).concat(slots.filter(function(s){return s==='SFLEX'||s==='SUPER_FLEX'}));
+ order.forEach(function(s){var ok=function(p){var q=p.Pos==='DEF'?'DST':p.Pos;return s==='FLEX'?['RB','WR','TE'].indexOf(q)>=0:(s==='SFLEX'||s==='SUPER_FLEX')?['QB','RB','WR','TE'].indexOf(q)>=0:q===s};
+  var c=list.filter(function(p){return !used[p.Jugador]&&ok(p)}).sort(function(a,b){return (+b[key]||0)-(+a[key]||0)})[0];
+  if(c){used[c.Jugador]=1;tot+=+c[key]||0;sel.push([s,c])}});
+ return {t:tot,sel:sel,names:sel.map(function(x){return x[1].Jugador})}}
+function taView(){var ta=taInit();var all=rows('App_RankROS');var slots=String(R.slots||'QB,RB,RB,WR,WR,WR,TE,FLEX,K,DST').split(',');
+ var teams=[];all.forEach(function(r){var d=r['Dueño'];if(d&&d!=='Libre'&&d!==R.equipo&&teams.indexOf(d)<0)teams.push(d)});teams.sort();
+ if(ta.team&&teams.indexOf(ta.team)<0)ta.team='';
+ var mine=all.filter(function(r){return r['Dueño']===R.equipo}),theirs=all.filter(function(r){return r['Dueño']===ta.team});
+ var h=card('Analizar un trade','<select onchange="taTeam(this.value)"><option value="">Elige la contraparte…</option>'+teams.map(function(t){return '<option value="'+esc(t)+'"'+(t===ta.team?' selected':'')+'>'+esc(t)+'</option>'}).join('')+'</select><div class="note">Elige hasta 5 jugadores por lado. Se juzga por los pts ROS de la mejor alineación de cada equipo, antes y después.</div>');
+ if(ta.give.length||ta.get.length){
+  var by=function(names){return all.filter(function(r){return names.indexOf(r.Jugador)>=0})};
+  var swap=function(list,out,inn){return list.filter(function(r){return out.indexOf(r.Jugador)<0}).concat(by(inn))};
+  var mA=swap(mine,ta.give,ta.get),tA=swap(theirs,ta.get,ta.give);
+  var m0=lineup(mine,slots,'ROS'),m1=lineup(mA,slots,'ROS'),t0=lineup(theirs,slots,'ROS'),t1=lineup(tA,slots,'ROS');
+  var mp0=lineup(mine,slots,'Playoffs').t,mp1=lineup(mA,slots,'Playoffs').t,tp0=lineup(theirs,slots,'Playoffs').t,tp1=lineup(tA,slots,'Playoffs').t;
+  var d1=m1.t-m0.t,d2=t1.t-t0.t,sum=function(a,k){return a.reduce(function(s,r){return s+(+r[k]||0)},0)};
+  var gross=sum(by(ta.get),'ROS')-sum(by(ta.give),'ROS');
+  var v=!ta.team?['y','Elige la contraparte.']:d1<=0.5?['rd','No te conviene: tu mejor alineación no mejora.']:d2>=0?['g','Les conviene a ambos: proponla.']:d2>=-10?['y','Te conviene; a ellos les cuesta un poco. Puede salir si les cubre una necesidad.']:['y','Te conviene mucho, pero ellos pierden '+n(-d2,0)+' pts ROS: difícil que acepten. Agrega algo que les sume.'];
+  var pw=rows('App_Power').filter(function(r){return r.Equipo===ta.team})[0];
+  var inn=m1.names.filter(function(x){return m0.names.indexOf(x)<0}),out=m0.names.filter(function(x){return m1.names.indexOf(x)<0});
+  var pos=['QB','RB','WR','TE','FLEX','K','DST'].map(function(q){var a=function(L){return L.sel.filter(function(x){return x[0]===q}).reduce(function(s,x){return s+(+x[1].ROS||0)},0)};return [q,a(m0),a(m1)]}).filter(function(x){return Math.abs(x[2]-x[1])>0.5});
+  h+=card('Resultado','<div class="pill '+(v[0]==='g'?'ok':'wa')+'" style="margin-top:0;'+(v[0]==='rd'?'background:#3a1a1a;color:#F87171;border-color:#6b2a2a':'')+'"><span>'+v[1]+'</span></div>'+
+   '<div class="kv3" style="margin-top:12px"><span></span><b class="mu sm">Yo</b><b class="mu sm">'+esc(ta.team||'Ellos')+'</b>'+
+   '<span>Pts titulares ROS</span><b>'+sg(d1)+'</b><b>'+sg(d2)+'</b>'+
+   '<span>Pts titulares playoffs</span><b>'+sg(mp1-mp0)+'</b><b>'+sg(tp1-tp0)+'</b>'+
+   '<span>Pts ROS brutos (recibo − doy)</span><b>'+sg(gross)+'</b><b>'+sg(-gross)+'</b></div>'+
+   (pos.length?'<div class="note" style="margin-top:10px"><b style="color:var(--tx)">Tus titulares por posición:</b> '+pos.map(function(x){return x[0]+' '+n(x[1],0)+' → '+n(x[2],0)}).join(' · ')+'</div>':'')+
+   (inn.length||out.length?'<div class="note">Entran a tu alineación: <b class="l">'+(esc(inn.join(', '))||'—')+'</b> · Salen: <b>'+(esc(out.join(', '))||'—')+'</b></div>':'')+
+   (pw?'<div class="note">'+esc(ta.team)+' es más débil en <b class="rd">'+esc(pw['Más débil'])+'</b>.</div>':'')+
+   (ta.get.length>ta.give.length?'<div class="note">Recibes más de los que das: tendrás que soltar a alguien de tu banca.</div>':'')+
+   '<button class="btn sec" style="margin:12px 0 0" onclick="taClear()">Limpiar selección</button>')}
+ var pick=function(side,list,title){window['_ta_'+side]=list.map(function(r){return r.Jugador});var sel=ta[side];
+  return card(title+' ('+sel.length+'/5)',list.length?list.map(function(r,i){var on=sel.indexOf(r.Jugador)>=0;return '<div class="row tap'+(on?' sel':'')+'" onclick="taToggle(\''+side+'\','+i+')">'+pb(r.Pos)+av(r.Jugador,r.NFL,r.Pos)+'<div class="b"><div class="n">'+esc(r.Jugador)+'</div><div class="s">'+esc(r.NFL)+' · ROS '+n(r.ROS,0)+' · #'+n(r['Rank ROS pos'],0)+' '+esc(r.Pos)+'</div></div><span class="ck">'+(on?'✓':'+')+'</span></div>'}).join(''):'<div class="empty">Elige la contraparte.</div>')};
+ h+=pick('give',mine,'Doy (mi equipo)');
+ if(ta.team)h+=pick('get',theirs,'Recibo ('+esc(ta.team)+')');
+ return h}
 function bars(r){var ks=[];for(var i=0;i<=14;i++)ks.push(String(i));var mx=Math.max.apply(null,ks.map(function(k){return +r[k]||0}))||1;
  return '<div class="bars">'+ks.map(function(k){var v=+r[k]||0;return '<div class="bc"><div class="bv">'+(v>=0.01?Math.round(v*100):'')+'</div><div class="bb" style="height:'+Math.round(v/mx*90)+'px"></div><div class="bl">'+k+'</div></div>'}).join('')+'</div><div class="sm mu" style="text-align:center;margin-top:4px">Victorias al final de la temporada regular (% de simulaciones)</div>'}
 function vor(v){if(typeof v!=='number')return '';var c=v>=60?'#4ADE80':v>=20?'#C8F36A':v>=0?'#8B95A7':'#F87171';return '<span style="color:'+c+';font-weight:700">'+Math.round(v)+'</span>'}
@@ -280,9 +323,9 @@ stream:function(){var ps=cur('st','QB');var h=seg('st',['QB','TE','DST','K']);va
  h+=card('Streaming '+ps,(msg?'<div class="msg"><b>Resumen:</b> '+esc(msg)+'</div>':'')+rows('App_Streaming').filter(function(r){return r.Pos===ps}).map(function(r){return prow(r,{sub:function(x){return x.NFL+' vs '+x.Rival},chips:[['Mejora','vs el mío',sg],['Oferta','Oferta $',n0],['Max','Máx $',n0]],note:'Decisión',right:function(x){return fmtP(x,'Proy')}})}).join(''));
  if(ps==='DST'||ps==='K'){var aj=rows('App_Ajustes');if(aj.length)h+=card('Ajustes de la web (clima, QB rival)',aj.map(function(r){return '<div class="row"><div class="b"><div class="n">'+esc(r.Equipo)+'</div><div class="note">'+esc(r.Nota)+'</div></div><div class="r"><b class="'+(r.Ajuste>0?'g':'rd')+'">'+(r.Ajuste>0?'+':'')+Math.round((+r.Ajuste||0)*100)+'%</b><small>Ajuste</small></div></div>'}).join(''))}
  return h},
-trades:function(){var s=cur('tr','Sugeridos');var h=tabs('tr',['Sugeridos','Comprar','Vender','Riesgo']);
+trades:function(){var s=cur('tr','Sugeridos');var h=tabs('tr',['Sugeridos','Analizar','Comprar','Vender','Riesgo']);if(s==='Analizar')return h+taView();
  var o=function(note){return {sub:function(x){return x.Equipo+' · '+n(x.PPG)+' ppg'},note:note,right:function(x){return '<div class="r"><b>'+sg(x['Señal'])+'</b><small>Señal</small></div>'}}};
- if(s==='Sugeridos')return h+card('Trades sugeridos',rows('App_Trades').map(function(r){return '<div class="row"><div class="ic" style="font-size:18px">🔁</div><div class="b"><div class="n">'+esc(r.Contraparte)+'</div><div class="s">Doy <b style="color:var(--tx)">'+esc(r.Doy)+'</b> · Recibo <b class="l">'+esc(r.Recibo)+'</b></div><div class="chips"><span class="chip">Ellos <b>'+sg(r['Su cambio ROS'])+'</b></span><span class="chip">Playoffs <b>'+sg(r['Mi cambio playoffs'])+'</b></span></div><div class="note">'+esc(r['Evaluación'])+'</div></div><div class="r"><b>'+sg(r['Mi cambio ROS'])+'</b><small>Yo ROS</small></div></div>'}).join(''),'<span class="sm">'+esc(String(R.estado_sugerencias||'').slice(0,10))+'</span>');
+ window._sugs=rows('App_Trades');if(s==='Sugeridos')return h+card('Trades sugeridos',window._sugs.map(function(r,i){return '<div class="row tap" onclick="taPre('+i+')"><div class="ic" style="font-size:18px">🔁</div><div class="b"><div class="n">'+esc(r.Contraparte)+'</div><div class="s">Doy <b style="color:var(--tx)">'+esc(r.Doy)+'</b> · Recibo <b class="l">'+esc(r.Recibo)+'</b></div><div class="chips"><span class="chip">Ellos <b>'+sg(r['Su cambio ROS'])+'</b></span><span class="chip">Playoffs <b>'+sg(r['Mi cambio playoffs'])+'</b></span></div><div class="note">'+esc(r['Evaluación'])+'</div></div><div class="r"><b>'+sg(r['Mi cambio ROS'])+'</b><small>Yo ROS</small></div></div>'}).join(''),'<span class="sm">'+esc(String(R.estado_sugerencias||'').slice(0,10))+'</span>');
  if(s==='Comprar')return h+card('Comprar barato',rows('App_Comprar').map(function(r){return prow(r,o('Por qué'))}).join(''));
  if(s==='Vender')return h+card('Vender caro · mis jugadores',rows('App_Vender').map(function(r){return prow(r,o('Veredicto'))}).join(''));
  return h+card('Riesgo en la liga',rows('App_Riesgo').map(function(r){return prow(r,o('Por qué'))}).join(''))},
