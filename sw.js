@@ -1,4 +1,4 @@
-const CACHE = 'sunday-locker-v4';
+const CACHE = 'sunday-locker-v5';
 const SHELL = ['./', 'index.html', 'manifest.json', 'logo.png', 'icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => null)))));
