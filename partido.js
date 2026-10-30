@@ -161,3 +161,45 @@ function pmPosiciones(){var rs=rows('App_Posiciones').filter(function(r){return 
  if(w===b&&cur('pt','Mi partido')==='Posiciones')return wkBar()+tabs('pt',['Mi partido','Liga','Temporada','Posiciones','Power'])+pmPosiciones();
  return _m()}})();
 render();
+// ---------- Semanas futuras: proyección del modelo semana a semana (App_ProySem), lado a lado ----------
+function pfMap(w){var m={},k='S'+w;rows('App_ProySem').forEach(function(r){if(typeof r[k]==='number')m[r.Jugador]=r[k]});return m}
+function pfSide(m,ix,pr){var slots=String(R.slots||'QB,RB,RB,WR,WR,WR,TE,FLEX,K,DST').split(',').filter(function(s){return s&&s!=='BN'});
+ var all=(m.players||[]).map(function(id){var x=wkName(id,ix),pos=x.pos==='DEF'?'DST':x.pos;return {Jugador:x.nm,Pos:pos,NFL:x.nfl,P:pr[x.nm]!=null?pr[x.nm]:0}});
+ var lu=lineup(all,slots,'P'),pool=lu.sel.slice(),used={},st=[];
+ slots.forEach(function(s){for(var i=0;i<pool.length;i++){if(pool[i]&&pool[i][0]===s){var r=pool[i][1];pool[i]=null;used[r.Jugador]=1;st.push({nm:r.Jugador,pos:r.Pos,nfl:r.NFL,pts:r.P});return}}st.push({empty:true})});
+ var bn=all.filter(function(r){return !used[r.Jugador]}).map(function(r){return {nm:r.Jugador,pos:r.Pos,nfl:r.NFL,pts:r.P}}).sort(function(a,b){return (PM_ORD[a.pos]||9)-(PM_ORD[b.pos]||9)||b.pts-a.pts});
+ var t=0;st.forEach(function(x){if(!x.empty)t+=x.pts});return {st:st,bn:bn,t:t,slots:slots}}
+function pfDuel(A,B,nA,nB,w,prob){var ix=lvIdx(),pr=pfMap(w),a=pfSide(A,ix,pr),b=B?pfSide(B,ix,pr):{st:[],bn:[],t:0};
+ var h='<div class="vs"><div class="side">'+shield('#C8F36A')+'<div class="nm">'+esc(nA)+'</div><div class="pts">'+n(a.t)+'</div><div class="lbl">Proyectado</div></div><div class="vsc">VS</div><div class="side">'+shield('#8B95A7')+'<div class="nm">'+esc(nB)+'</div><div class="pts">'+n(b.t)+'</div><div class="lbl">Proyectado</div></div></div>';
+ if(typeof prob==='number')h+='<div class="prob"><i style="width:'+Math.round(prob*100)+'%"></i></div><div class="sm mu" style="margin-top:6px">Prob. de ganar '+esc(nA)+' <b class="l">'+p(prob)+'</b></div>';
+ var g='<div class="pmh"><div class="t">'+esc(nA)+'</div><div></div><div class="t R">'+esc(nB)+'</div></div>';
+ for(var i=0;i<a.slots.length;i++)g+=pmRow(a.slots[i]==='SUPER_FLEX'?'SFLEX':a.slots[i],a.st[i],b.st[i]);
+ g+='<div class="pmtot"><div class="L">'+n(a.t)+'</div><div class="m">TOTAL</div><div>'+n(b.t)+'</div></div>';
+ var grp=function(l){var o={};l.forEach(function(x){(o[x.pos||'?']=o[x.pos||'?']||[]).push(x)});return o},ga=grp(a.bn),gb=grp(b.bn),bh='';
+ Object.keys(ga).concat(Object.keys(gb)).filter(function(k,i,arr){return arr.indexOf(k)===i}).sort(function(x,y){return (PM_ORD[x]||9)-(PM_ORD[y]||9)}).forEach(function(k){var la=ga[k]||[],lb=gb[k]||[];for(var j=0;j<Math.max(la.length,lb.length);j++)bh+=pmRow(k,la[j],lb[j])});
+ if(bh)g+='<div class="pmt">Banca</div>'+bh;
+ return card('',h)+card('Alineación óptima proyectada',g,'<span>Proy</span>')+'<div class="note" style="margin:-6px 4px 14px">Proyección del modelo para la semana '+w+': puntos por partido esperados × dificultad del rival de esa semana (0 en bye o si aún no vuelve de lesión). Se recalcula cada vez que corres ActualizarTodo.</div>'}
+function pfList(d,names,rid,w){var by=pmPairs(d),pr=pfMap(w),ix=lvIdx();
+ var keys=Object.keys(by).sort(function(x,y){var mx=by[x].some(function(m){return m.roster_id===rid}),my=by[y].some(function(m){return m.roster_id===rid});return (my?1:0)-(mx?1:0)||x-y});
+ var h=keys.map(function(k){var q=by[k];if(q.length<2)return '';if(q[1].roster_id===rid)q=[q[1],q[0]];
+  var a=pfSide(q[0],ix,pr).t,b=pfSide(q[1],ix,pr).t,nA=names[q[0].roster_id]||'',nB=names[q[1].roster_id]||'',pa=a+b>0?a/(a+b):.5;
+  return '<button class="pml'+(q[0].roster_id===rid?' me':'')+'" onclick="pmOpen('+k+')"><div class="n">'+esc(nA)+'</div><div class="sc"><b class="'+(a>b?'w':'')+'">'+n(a)+'</b><i>–</i><b class="'+(b>a?'w':'')+'">'+n(b)+'</b></div><div class="n R">'+esc(nB)+'</div><div class="sm2"><span>Proy.</span><div class="pbar"><i style="width:'+Math.round(pa*100)+'%"></i></div><span>Proy.</span></div></button>'}).join('');
+ return card('Partidos de la semana '+w+' · proyección',h||'<div class="empty">Sin partidos.</div>','<span>Toca para ver</span>')}
+(function(){var _m=V.matchup;V.matchup=function(){var b=wkBase(),w=WK.sel||b;
+ if(w<=b||w>=15||!rows('App_ProySem').length)return _m();
+ var h=wkBar()+'<div class="wkh"><b>Semana '+w+'</b><button onclick="pickWk('+b+')">Volver a la actual</button></div>';
+ var t=cur('pt','Mi partido');if(t!=='Liga')t='Mi partido';S.sub.pt=t;h+=tabs('pt',['Mi partido','Liga']);
+ var d=pmData(w);if(!d)return h+'<div class="sk" style="height:150px"></div><div class="sk" style="height:420px"></div>';
+ if(d.err||!d.length||d.every(function(m){return m.matchup_id==null}))return _m();
+ var names=pmNames(),rid=pmMyRid(names);if(rid==null){if(typeof slLoad==='function')slLoad(false);return h+card('Semana '+w,'<div class="empty">Cargando equipos de Sleeper…</div>')}
+ var by=pmPairs(d),pk=String(S.sub.pm||'').split('|');
+ if(t==='Liga'&&pk[0]===String(R.liga_id)&&+pk[1]===w&&by[pk[2]]){var q=by[pk[2]];if(q[1]&&q[1].roster_id===rid)q=[q[1],q[0]];
+  return h+'<button class="pmbk" onclick="pmClose()">'+svg('back',2)+'Partidos de la liga</button>'+pfDuel(q[0],q[1],names[q[0].roster_id]||'',q[1]?names[q[1].roster_id]||'':'—',w,null)}
+ if(t==='Liga')return h+pfList(d,names,rid,w);
+ var me=d.filter(function(m){return m.roster_id===rid})[0];if(!me||me.matchup_id==null)return h+card('Semana '+w,'<div class="empty">No tienes partido esta semana.</div>');
+ var op=(by[me.matchup_id]||[]).filter(function(m){return m.roster_id!==rid})[0],opN=op?(names[op.roster_id]||''):'—';
+ var c=rows('App_Calendario').filter(function(r){return +r.Semana===w})[0]||{};
+ h+=pfDuel(me,op,R.equipo,opN,w,typeof c['Prob ganar']==='number'?c['Prob ganar']:null);
+ if(c.Semana)h+=card('Para esta semana','<div class="kv"><span>Titulares en bye</span><b>'+esc(c['Titulares en bye']||'—')+'</b><span>Otros en bye</span><b>'+esc(c['Otros en bye']||'—')+'</b></div>'+(c.Alerta?'<div class="note y">'+esc(c.Alerta)+'</div>':''));
+ return h}})();
+render();
