@@ -142,3 +142,10 @@ V.matchup=function(){var b=wkBase(),w=WK.sel||b;
 (function(){var _p=pickWk;pickWk=function(w){S.sub.pm='';_p(w)}})();
 
 render();
+// ---------- barra inferior siempre fija abajo (no se mueve al cambiar de pestaña) ----------
+(function(){var st=document.createElement('style');st.textContent=[
+'html{height:100%;overscroll-behavior-y:none}body{min-height:100%}',
+'nav#nv{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;transform:translateZ(0);height:calc(62px + env(safe-area-inset-bottom))!important;align-items:flex-start!important;box-sizing:border-box}',
+'nav#nv button{min-width:0;height:48px;justify-content:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px}',
+'main{min-height:calc(100vh - var(--hh,54px) - 62px)}'
+].join('');document.head.appendChild(st)})();
