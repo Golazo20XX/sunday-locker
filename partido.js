@@ -149,3 +149,15 @@ render();
 'nav#nv button{min-width:0;height:48px;justify-content:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px}',
 'main{min-height:calc(100vh - var(--hh,54px) - 62px)}'
 ].join('');document.head.appendChild(st)})();
+// ---------- Posiciones: orden por récord actual (victorias, luego PF), con % de playoffs al lado ----------
+function pmRec(s){var m=String(s||'').split('-').map(function(x){return +x||0});return {w:m[0]||0,l:m[1]||0,t:m[2]||0}}
+function pmPosiciones(){var rs=rows('App_Posiciones').filter(function(r){return r.Equipo}).slice().sort(function(a,b){var x=pmRec(a['Récord']),y=pmRec(b['Récord']);
+  return (y.w+y.t/2)-(x.w+x.t/2)||(x.l-y.l)||((+b.PF||0)-(+a.PF||0))});
+ var h=card('Posiciones',rs.map(function(r,i){var me=r.Equipo===R.equipo,pp=r['% Playoffs'];
+  return '<div class="row"><div class="mu sm" style="width:20px;text-align:right">'+(i+1)+'</div><div class="b"><div class="n'+(me?' l':'')+'">'+esc(r.Equipo)+'</div><div class="s"><b style="color:var(--tx)">'+esc(r['Récord'])+'</b> · '+n(r.PF,0)+' PF · proy. '+esc(r['Récord final']||'—')+'</div><div class="chips"><span class="chip">Top 2 <b>'+p(r['% Top 2'])+'</b></span><span class="chip">1.º <b>'+p(r['% Primero'])+'</b></span><span class="chip">Final <b>'+p(r['% Final'])+'</b></span><span class="chip">Campeón <b>'+p(r['% Campeón'])+'</b></span><span class="chip">Último <b>'+p(r['% Último'])+'</b></span><span class="chip">Cal. <b>#'+esc(r.Calendario)+'</b></span></div></div><div class="r"><b class="'+(pp>=.75?'g':pp<.25?'rd':'y')+'">'+p(pp)+'</b><small>Playoffs</small></div></div>'}).join('')||'<div class="empty">Sin datos.</div>','<span>Récord · PF</span>');
+ var hz=rows('App_Hallazgos').map(function(r){return '<div class="msg">'+esc(r.Texto)+'</div>'}).join('');
+ return h+(hz?card('Hallazgos',hz):'')}
+(function(){var _m=V.matchup;V.matchup=function(){var b=wkBase(),w=WK.sel||b;
+ if(w===b&&cur('pt','Mi partido')==='Posiciones')return wkBar()+tabs('pt',['Mi partido','Liga','Temporada','Posiciones','Power'])+pmPosiciones();
+ return _m()}})();
+render();
