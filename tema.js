@@ -425,3 +425,14 @@ setInterval(function(){if(document.visibilityState!=='visible'||!D||!nfOn())retu
 (function(){var _h=V.home;V.home=function(){return String(_h()).replace('<button onclick="qGo(\'matchup\',\'pt\',\'Posiciones\')"><i>'+svg('chart')+'</i>Posiciones</button>','<button onclick="qGo(\'matchup\',\'pt\',\'NFL\')"><i>'+svg('live')+'</i>NFL en vivo</button>')}})();
 
 render();
+// ======================= v6 (pegar al final de tema.js) =======================
+// iOS pone un difuminado arriba con el color de fondo de la página: el fondo pasa a negro y solo el contenido es claro
+(function(){var st=document.createElement('style');st.textContent=[
+ 'html,html body{background:#0B0F17!important;background-image:none!important}',
+ 'body{padding-bottom:0!important}',
+ 'main#m{background:var(--ob);min-height:100vh;padding-bottom:calc(96px + env(safe-area-inset-bottom))!important}',
+ '#sltop{position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:#0B0F17;z-index:65;pointer-events:none}'
+ ].join('');document.head.appendChild(st);
+ var d=document.createElement('div');d.id='sltop';document.body.appendChild(d);
+ var mt=document.querySelector('meta[name="theme-color"]');if(mt)mt.setAttribute('content','#0B0F17')})();
+render();
