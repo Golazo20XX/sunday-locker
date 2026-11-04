@@ -337,3 +337,91 @@ function vlOffers(ta,mine,slots){var get=ta.get;if(!get.length)return [];var tv=
 
 if(S.tab==='tools'){S.tab='market'}
 render();
+// ======================= v5 (pegar al final de tema.js) =======================
+(function(){var st=document.createElement('style');st.textContent=[
+ // pantalla de inicio: sin el logo difuminado, solo la marca en texto
+ '#splash>img{display:none!important}#wmSplash{display:flex!important}',
+ // NFL en vivo
+ '.nfh{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--mu);margin:0 2px 10px}.nfh button{background:#fff;border:1px solid var(--ln);border-radius:14px;padding:4px 10px;font-size:12px;font-weight:700;color:var(--tx)}',
+ '.ng{background:#fff;border:1px solid #E6EAF0;border-radius:14px;padding:10px 12px;margin-bottom:10px}.ng.in{border-color:#F5C2C2}',
+ '.ngt{display:flex;justify-content:space-between;font-size:11px;color:var(--mu);margin-bottom:4px}.ngt .st{font-weight:800;color:var(--tx)}.ngt .st.in{color:#D92D20}.ngt .st.in::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#D92D20;margin-right:5px;vertical-align:1px}',
+ '.ngr{display:flex;align-items:center;gap:10px;padding:4px 0}.ngr img{width:28px;height:28px;object-fit:contain}.ngr .tn{flex:1;font-weight:700;font-size:14px}.ngr .tn small{font-weight:500;color:var(--mu);font-size:11px;margin-left:6px}.ngr .sc{font-size:20px;font-weight:800;min-width:34px;text-align:right}.ngr.lo .sc,.ngr.lo .tn{color:#98A2B3}.ngr .pz{width:8px;height:8px;border-radius:50%;background:var(--li);flex:none}',
+ '.ngs{font-size:11px;color:var(--mu);margin-top:2px}.ngs.rz{color:#D92D20;font-weight:700}',
+ '.ngp{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;padding-top:8px;border-top:1px solid #EEF1F5}.ngp span{font-size:11px;font-weight:600;border-radius:8px;padding:2px 7px;background:#E7F6EE;color:#0E7A47}.ngp span.rv{background:#FDECEC;color:#B42318}.ngp span b{margin-left:3px}',
+ // barra del trade en Valores
+ '.tvb{display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;border-radius:14px;padding:10px 12px;margin-bottom:12px}.tvb .b{flex:1;min-width:0;font-size:12px;line-height:1.35}.tvb .b b{color:var(--br)}.tvb button{background:var(--br);color:var(--ink);border:0;border-radius:12px;padding:7px 12px;font-size:12px;font-weight:800}',
+ '.vrow .add{font-size:18px;font-weight:800;color:var(--li);width:20px;text-align:center}'
+ ].join('');document.head.appendChild(st)})();
+
+// ---------- VALOR calculado en la app (funciona aunque la hoja App_Valor no llegue, y en ambas ligas) ----------
+vlMap=function(){var stt=typeof SL!=='undefined'?SL.t:0;if(VL.d===D&&VL.st===stt&&VL.list.length)return VL.m;VL.d=D;VL.st=stt;VL.m={};
+ var ex={};rows('App_Valor').forEach(function(r){ex[r.Jugador]=r});
+ var ros=rows('App_RankROS').filter(function(r){return r.Jugador&&typeof r.ROS==='number'}),N=+R.valor_libres||3,pq=function(q){return q==='DEF'?'DST':q};
+ var rep={};['QB','RB','WR','TE','K','DST'].forEach(function(q){var f=ros.filter(function(r){return pq(r.Pos)===q&&vlOwn(r)==='Libre'}).map(function(r){return r.ROS}).sort(function(a,b){return b-a}).slice(0,N);rep[q]=f.length?f.reduce(function(s,x){return s+x},0)/f.length:0});
+ var L=ros.map(function(r){var q=pq(r.Pos),v=Math.max(0,r.ROS-(rep[q]||0)),e=ex[r.Jugador]||{};return {Jugador:r.Jugador,Pos:r.Pos,NFL:r.NFL,'Dueño':vlOwn(r),vor:v,'Pts ROS':r.ROS,Reemplazo:rep[q]||0,'Cal ROS':r['Cal ROS'],'Cal playoffs':r['Cal playoffs'],'Rival S+1':e['Rival S+1'],'Factor S+1':e['Factor S+1'],'Rival S+2':e['Rival S+2'],'Factor S+2':e['Factor S+2']}});
+ var mx=Math.max.apply(null,L.map(function(x){return x.vor}).concat([0]));
+ L.forEach(function(x){x.Valor=mx>0?Math.round(1000*x.vor/mx)/10:0;x.Tier=x.Valor>=80?1:x.Valor>=60?2:x.Valor>=40?3:x.Valor>=20?4:5});
+ L.sort(function(a,b){return b.Valor-a.Valor||b['Pts ROS']-a['Pts ROS']});var rk={};L.forEach(function(x){var q=pq(x.Pos);rk[q]=(rk[q]||0)+1;x['Rank pos valor']=rk[q];VL.m[x.Jugador]=x});
+ VL.list=L;return VL.m};
+vlOf=function(nm){var r=vlMap()[nm];return r&&typeof r.Valor==='number'?r.Valor:0};
+
+// valor junto al nombre en todas las listas de jugadores
+(function(){var _p=prow;prow=function(r,o){var h=_p(r,o),nm=r&&(r.Jugador||r.Tomar),v=nm?vlOf(nm):0;return v>0?h.replace('<div class="s">','<div class="s"><b class="vv">'+vf(v)+'</b> '):h}})();
+
+// ---------- Tabla de valores: en Jugadores › Valores y en Mercado › Trades › Valores (ahí, tocar = agregar al trade) ----------
+function vtOpen(i){openP(window._vt[i])}
+function vtPick(i){var nm=window._vt[i],r=vlMap()[nm];if(!r)return;var o=vlOwn(r),ta=taInit();
+ if(o===R.equipo){var a=ta.give,k=a.indexOf(nm);if(k>=0)a.splice(k,1);else if(a.length<5)a.push(nm)}
+ else if(o==='Libre'){openP(nm);return}
+ else{if(ta.team!==o){ta.team=o;ta.get=[]}var b=ta.get,j=b.indexOf(nm);if(j>=0)b.splice(j,1);else if(b.length<5)b.push(nm)}
+ var y=scrollY;render();scrollTo(0,y)}
+vtView=function(mode){var pos=cur('vtp','Todos'),ta=mode?taInit():null;vlMap();
+ var L=VL.list.filter(function(r){var q=r.Pos==='DEF'?'DST':r.Pos;return (pos==='Todos'||q===(pos==='DEF'?'DST':pos))&&r.Valor>0}).slice(0,pos==='Todos'?150:70);
+ window._vt=L.map(function(r){return r.Jugador});var tier=0,h='';
+ L.forEach(function(r,i){if(r.Tier!==tier){tier=r.Tier;h+='<div class="tierh">Tier '+esc(tier)+'</div>'}var o=vlOwn(r),me=o===R.equipo,on=ta&&(ta.give.indexOf(r.Jugador)>=0||ta.get.indexOf(r.Jugador)>=0);
+  h+='<button class="vrow'+(me?' me':'')+'"'+(on?' style="border-color:#0B0F17;border-width:2px"':'')+' onclick="'+(mode?'vtPick':'vtOpen')+'('+i+')">'+(mode?'<span class="add">'+(on?'✓':o==='Libre'?'':'+')+'</span>':'<span class="rk">'+(i+1)+'</span>')+av(r.Jugador,r.NFL,r.Pos)+'<div class="b"><div class="n">'+esc(r.Jugador)+'</div><div class="s">'+pb(r.Pos)+esc(r.NFL)+' · #'+esc(r['Rank pos valor'])+' '+esc(r.Pos)+' · '+esc(me?'Mío':o)+'</div></div><div class="vbx"><b>'+vf(r.Valor)+'</b><small>Valor</small></div></button>'});
+ var top='';if(mode){var g=vlPkg(ta.give),v=vlPkg(ta.get);top='<div class="tvb"><div class="b">'+(ta.give.length||ta.get.length?'Doy <b>'+vf(g)+'</b> ('+esc(ta.give.join(', ')||'—')+')<br>Recibo <b>'+vf(v)+'</b> ('+esc(ta.get.join(', ')||'—')+(ta.team?' de '+esc(ta.team):'')+')':'Toca jugadores tuyos para darlos y de otro equipo para pedirlos.')+'</div><button onclick="S.sub.tr=\'Analizar\';render();scrollTo(0,0)">Analizar</button></div>'}
+ return top+seg('vtp',['Todos','QB','RB','WR','TE','K','DEF'])+(h||card('','<div class="empty">Sin jugadores con valor.</div>'))+'<div class="dtn">Valor = puntos ROS por encima de lo que conseguirías gratis en waivers en su posición (0-100; el mejor = 100). Se recalcula con los dueños actuales de Sleeper.</div>'};
+(function(){var TR5=['Sugeridos','Analizar','Comprar','Vender','Riesgo'],TR6=['Sugeridos','Analizar','Valores','Comprar','Vender','Riesgo'],_t=T.trades;
+ T.trades=function(){var s=cur('tr','Sugeridos');if(s==='Valores')return tabs('tr',TR6)+vtView(true);return String(_t()).replace(tabs('tr',TR5),tabs('tr',TR6))}})();
+
+// ---------- PARTIDO › NFL: marcadores de la NFL en tiempo real (ESPN) con tus jugadores y los del rival ----------
+var NF={t:0,ev:[],busy:false,err:'',live:false,f:''};
+function nfOn(){return S.tab==='matchup'&&cur('pt','Mi partido')==='NFL'}
+function nfLoad(force){if(NF.busy)return;if(!force&&NF.t&&Date.now()-NF.t<(NF.live?25000:300000))return;NF.busy=true;
+ var wk=(typeof LV!=='undefined'&&LV.wk)||(typeof SL!=='undefined'&&SL.wk)||+R.semana,season=(typeof LV!=='undefined'&&LV.season)||String(new Date().getFullYear());
+ jget('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=2&week='+wk+'&dates='+season).then(function(j){
+  NF.ev=(j.events||[]).map(function(ev){var c=(ev.competitions||[])[0]||{},s=ev.status||c.status||{},ty=s.type||{},si=c.situation||{};
+   var tm=function(ha){var x=(c.competitors||[]).filter(function(y){return y.homeAway===ha})[0]||{},t=x.team||{};return {ab:t.abbreviation||'',t:nfl(t.abbreviation),logo:t.logo||tmLogo(nfl(t.abbreviation)),sc:x.score,rec:((x.records||[])[0]||{}).summary||'',id:t.id,pos:si.possession&&si.possession===t.id}};
+   var st=ty.state||'pre',det=String(ty.shortDetail||'').replace('Halftime','Medio tiempo').replace('End of ','Fin del ').replace(/ Quarter/,'');
+   return {a:tm('away'),h:tm('home'),st:st,lab:st==='pre'?new Date(ev.date).toLocaleString('es',{weekday:'short',hour:'2-digit',minute:'2-digit'}):st==='post'?(/OT/.test(det)?'Final (TE)':'Final'):det,date:+new Date(ev.date),dd:si.downDistanceText||'',rz:!!si.isRedZone,tv:(((c.broadcasts||[])[0]||{}).names||[])[0]||''}});
+  NF.wk=wk;NF.t=Date.now();NF.busy=false;NF.err='';NF.live=NF.ev.some(function(e){return e.st==='in'});if(nfOn()){var y=scrollY;render();scrollTo(0,y)}})
+ .catch(function(e){NF.busy=false;NF.err=e.message;NF.t=Date.now();if(nfOn())render()})}
+function nfPeople(){var mine={},riv={},pts={},sl=typeof SL!=='undefined'&&SL.lid===R.liga_id;
+ var add=function(o,nm,t){t=nfl(t);if(!t||!nm)return;(o[t]=o[t]||[]).push(nm)};
+ if(sl&&SL.me&&SL.me.pl)SL.me.pl.forEach(function(p){if(!p.ir)add(mine,p.Jugador,p.NFL)});else rows('App_Roster').forEach(function(r){add(mine,r.Jugador,r.NFL)});
+ if(sl&&SL.rv&&SL.rv.pl)SL.rv.pl.forEach(function(p){if(!p.ir)add(riv,p.Jugador,p.NFL)});else rows('App_Rival').forEach(function(r){add(riv,r.Jugador,r.NFL)});
+ if(typeof LV!=='undefined'&&LV.m&&LV.lid===R.liga_id&&sl&&SL.I)LV.m.forEach(function(m){var pp=m.players_points||{};for(var id in pp){var x=SL.I[id];if(x)pts[x.nm]=+pp[id]||0}});
+ return {mine:mine,riv:riv,pts:pts}}
+function nfShort(nm){var a=String(nm).replace(/ (Jr\.|Sr\.|II|III|IV)$/,'').split(' ');return a.length>1?a[0].charAt(0)+'. '+a.slice(1).join(' '):nm}
+function nflView(){var h='';
+ if(!NF.t){nfLoad(true);return '<div class="sk" style="height:120px"></div><div class="sk" style="height:120px"></div><div class="sk" style="height:120px"></div>'}
+ if(NF.err&&!NF.ev.length)return card('NFL','<div class="empty">No se pudo leer ESPN: '+esc(NF.err)+'</div><button class="btn sec" onclick="NF.t=0;render()">Reintentar</button>');
+ var pe=nfPeople(),flt=cur('nff','Todos'),ago=Math.round((Date.now()-NF.t)/1000);
+ var ord={in:0,pre:1,post:2},E=NF.ev.slice().sort(function(a,b){return (ord[a.st]-ord[b.st])||(a.date-b.date)});
+ if(flt==='Con mis jugadores')E=E.filter(function(e){return pe.mine[e.a.t]||pe.mine[e.h.t]||pe.riv[e.a.t]||pe.riv[e.h.t]});
+ h+='<div class="nfh"><span>Semana '+esc(NF.wk)+' · '+(NF.live?'<b style="color:#D92D20">EN JUEGO</b> · ':'')+'actualizado hace '+(ago<60?ago+' s':Math.round(ago/60)+' min')+'</span><button onclick="NF.t=0;if(typeof liveLoad===\'function\')liveLoad(true);render()">↻</button></div>';
+ h+=seg('nff',['Todos','Con mis jugadores']);
+ h+=E.map(function(e){var as=+e.a.sc||0,hs=+e.h.sc||0,done=e.st==='post';
+  var row=function(x,lo){return '<div class="ngr'+(lo?' lo':'')+'"><img src="'+esc(x.logo)+'" alt="" onerror="this.style.visibility=\'hidden\'"><div class="tn">'+esc(x.ab)+'<small>'+esc(x.rec)+'</small></div>'+(x.pos&&e.st==='in'?'<span class="pz"></span>':'')+'<div class="sc">'+(e.st==='pre'?'':esc(x.sc))+'</div></div>'};
+  var ppl=function(o,cls){return [e.a.t,e.h.t].map(function(t){return (o[t]||[]).map(function(nm){var v=pe.pts[nm];return '<span class="'+cls+'">'+esc(nfShort(nm))+(e.st!=='pre'&&v!=null?'<b>'+n(v)+'</b>':'')+'</span>'}).join('')}).join('')};
+  var pm=ppl(pe.mine,''),pr=ppl(pe.riv,'rv');
+  return '<div class="ng'+(e.st==='in'?' in':'')+'"><div class="ngt"><span class="st '+e.st+'">'+esc(e.lab)+'</span><span>'+esc(e.tv)+'</span></div>'+row(e.a,done&&as<hs)+row(e.h,done&&hs<as)+(e.st==='in'&&e.dd?'<div class="ngs'+(e.rz?' rz':'')+'">'+esc(e.dd)+(e.rz?' · zona roja':'')+'</div>':'')+(pm||pr?'<div class="ngp">'+pm+pr+'</div>':'')+'</div>'}).join('')||card('','<div class="empty">Sin partidos con este filtro.</div>');
+ return h+'<div class="dtn"><span style="color:#0E7A47;font-weight:700">Verde</span> = tus jugadores, <span style="color:#B42318;font-weight:700">rojo</span> = los de tu rival, con sus puntos fantasy en vivo. Se actualiza solo cada ~25 s mientras haya partidos en juego.</div>'}
+if(PTO.indexOf('NFL')<0)PTO.splice(1,0,'NFL');
+(function(){var _m=V.matchup;V.matchup=function(){if(cur('pt','Mi partido')==='NFL'){WK.sel=null;nfLoad(false);return tabs('pt',PTO)+nflView()}return _m()}})();
+setInterval(function(){if(document.visibilityState!=='visible'||!D||!nfOn())return;nfLoad(false);if(typeof liveLoad==='function')liveLoad(false)},10000);
+// acceso rápido en Inicio
+(function(){var _h=V.home;V.home=function(){return String(_h()).replace('<button onclick="qGo(\'matchup\',\'pt\',\'Posiciones\')"><i>'+svg('chart')+'</i>Posiciones</button>','<button onclick="qGo(\'matchup\',\'pt\',\'NFL\')"><i>'+svg('live')+'</i>NFL en vivo</button>')}})();
+
+render();
