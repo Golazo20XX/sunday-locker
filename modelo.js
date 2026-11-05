@@ -30,3 +30,4 @@ if(typeof vlMap==='function'){var _vm=vlMap;
   VL.list.forEach(function(x){VL.m[x.Jugador]=x});return VL.m}}
 if(window.J)bajar();
 })();
+(function(){var st=document.createElement('style');st.textContent='.pmc .s{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.25}';document.head.appendChild(st)})();
