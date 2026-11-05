@@ -1,15 +1,14 @@
 """
 Valor de trade (0-100) basado en evidencia.
 
-1) Valor del modelo: puntos por encima de un titular de la liga, semana a semana, contando
-   solo las semanas en que el jugador estaría en tu alineación. Incluye la incertidumbre real
-   del rol: cuánto cambia el promedio de un jugador de la 1.ª a la 2.ª mitad de temporada
-   (medido con 2025). Así un suplente con techo (rol que puede crecer) vale algo, y un
-   titular estable vale mucho más.
+1) Puntos por encima de un titular de la liga, semana a semana, con la incertidumbre real del rol
+   (medida con 2025). Se guarda como "VOR ROS" y se usa para K y DST.
 2) Valor de mercado: FantasyCalc (valores redraft calculados a partir de millones de trades
-   reales, 12 equipos, 1 QB, 0.5 PPR, se actualizan cada 3 h). Se lleva a la misma escala
-   del modelo por percentiles.
-3) Valor final = (1 - PESO_MERCADO) x modelo + PESO_MERCADO x mercado.
+   reales, 12 equipos, 1 QB, 0.5 PPR, se actualizan cada 3 h), llevado a 0-100.
+3) Escala: el modelo ordena a los jugadores de cada posición por sus puntos ROS proyectados y a cada
+   puesto le asigna lo que el mercado paga por ese puesto (ej. el RB que el modelo pone 30.º vale lo
+   que el mercado paga por un RB30). K y DST, sin mercado suficiente, usan el valor por encima del titular.
+4) Valor final = (1 - PESO_MERCADO) x modelo + PESO_MERCADO x mercado.
 """
 import json, math, os
 import numpy as np
@@ -166,16 +165,36 @@ def a_escala(mk, ref):
     return pd.Series(np.interp(pct.values, q, ref_ord), index=mk.index)
 
 
+def modelo_por_mercado(df, mk100):
+    """Valor del modelo en la escala del mercado: dentro de cada posición, el jugador que el modelo
+    proyecta en el puesto N recibe lo que el mercado paga por el puesto N de esa posición.
+    Así la escala (cuánto vale un RB40, un TE16, etc.) sale de trades reales y el modelo decide el orden."""
+    out = pd.Series(np.nan, index=df.index)
+    for p in TITULAR:
+        m = df["pos"] == p
+        mv = np.sort(mk100[mk100.index.isin(df.index[m])].values)[::-1]
+        if len(mv) < 10:
+            continue
+        orden = (df.loc[m, "ros"].rank(ascending=False, method="first") - 1).astype(int).values
+        cola = mv[-1] * np.exp(-(orden - len(mv) + 1) / 8.0)
+        out[m] = np.where(orden < len(mv), mv[np.minimum(orden, len(mv) - 1)], cola)
+    return out
+
+
 def calcular(df, proy, semana, pg25, gsis_a_sl):
     df = df.copy()
     s = incertidumbre(pg25)
     q = ausencias(pg25)
     vm = valor_modelo(df, proy, semana, s, q)
-    modelo = 100 * vm / vm.max() if vm.max() > 0 else vm
+    opcion = 100 * vm / vm.max() if vm.max() > 0 else vm
     mk = mercado(gsis_a_sl)
     mk = mk[mk.index.isin(df.index)]
-    merc = a_escala(mk, modelo[~df["pos"].isin(["K", "DST"])])
-    merc = merc.reindex(df.index)
+    if len(mk) >= 30:
+        mk100 = 100 * mk / mk.max()
+        modelo = modelo_por_mercado(df, mk100).fillna(opcion)
+        merc = mk100.reindex(df.index)
+    else:
+        modelo, merc = opcion, pd.Series(np.nan, index=df.index)
     final = modelo.copy()
     tiene = merc.notna()
     final[tiene] = (1 - PESO_MERCADO) * modelo[tiene] + PESO_MERCADO * merc[tiene]
