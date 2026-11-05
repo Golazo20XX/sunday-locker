@@ -241,17 +241,31 @@ def estado_lesiones(sl_players, espn, cal, semana):
     # Ajustes manuales opcionales (ajustes.csv en la raíz del repo): Jugador,Equipo,Prob,Regreso,Ajuste,Nota
     ruta = os.path.join(RAIZ, "ajustes.csv")
     if os.path.exists(ruta):
-        for _, r in pd.read_csv(ruta).iterrows():
-            k = (norm(r["Jugador"]), r["Equipo"])
-            base = out.get(k, dict(prob=1, regreso=0, estado="Manual", lesion="", nota=""))
-            if pd.notna(r.get("Prob")):
-                base["prob"] = float(r["Prob"])
-            if pd.notna(r.get("Regreso")):
-                base["regreso"] = int(r["Regreso"])
-            base["ajuste"] = float(r["Ajuste"]) if pd.notna(r.get("Ajuste")) else 0
-            if pd.notna(r.get("Nota")):
-                base["nota"] = str(r["Nota"])
-            out[k] = base
+        try:
+            aj = pd.read_csv(ruta, sep=None, engine="python", encoding="utf-8-sig", dtype=str).fillna("")
+            aj.columns = [str(c).strip().capitalize() for c in aj.columns]
+
+            def num(x):
+                x = str(x).strip().replace(",", ".")
+                return float(x) if x else None
+            for _, r in aj.iterrows():
+                nm, eq = norm(r.get("Jugador", "")), str(r.get("Equipo", "")).strip().upper()
+                if not nm:
+                    continue
+                k = (nm, eq) if eq else next((x for x in out if x[0] == nm), (nm, eq))
+                base = out.get(k, dict(prob=1, regreso=0, estado="Manual", lesion="", nota=""))
+                if num(r.get("Prob", "")) is not None:
+                    base["prob"] = num(r["Prob"])
+                if num(r.get("Regreso", "")) is not None:
+                    base["regreso"] = int(num(r["Regreso"]))
+                base["ajuste"] = num(r.get("Ajuste", "")) or 0
+                if str(r.get("Nota", "")).strip():
+                    base["nota"] = str(r["Nota"]).strip()
+                base["estado"] = base["estado"] + " · ajuste manual"
+                out[k] = base
+                print(f"Ajuste manual: {r.get('Jugador')} {eq} -> prob {base['prob']}, regreso {base['regreso']}")
+        except Exception as e:
+            print(f"AVISO: no pude leer ajustes.csv ({e})")
     return out
 
 
@@ -361,6 +375,11 @@ def proyectar(df, cal, fac_rival, les, semana, ahora):
     detalle = {}
     for w in semanas:
         disp = df.apply(lambda r: disponible(r, w), axis=1)
+        # Solo juega un QB por equipo: el de más puntos esperados entre los disponibles
+        q = (df["pos"] == "QB") & (disp > 0)
+        if q.any():
+            top = df.loc[q].groupby("nfl")["O"].transform("max")
+            disp[top.index[df.loc[q, "O"] < top]] = 0.0
         # Volumen heredado: oportunidades de compañeros de la misma posición que no juegan
         share = df["opp_g"].fillna(0) / df.groupby(["nfl", "pos"])["opp_g"].transform("sum").replace(0, np.nan)
         share = share.fillna(0)
@@ -565,6 +584,10 @@ def main():
         d["dif"] = det[semana]["fac"].map(lambda f: "Fácil" if f > 1.05 else ("Difícil" if f < 0.95 else "Media"))
         d["rival_s"] = det[semana]["rival"]
         d["proy"] = proy[semana]
+        for j in (1, 2):
+            w = semana + j
+            d[f"riv{j}"] = det[w]["rival"] if w in det else ""
+            d[f"fac{j}"] = det[w]["fac"].round(2) if w in det else ""
         d["proy_forma"] = (d["ppg_rec"] * det[semana]["fac"] * det[semana]["vegas"] * d["prob"]).round(2)
         rs = d.sort_values("proy", ascending=False)
         rr = d.sort_values("ros", ascending=False)
@@ -590,10 +613,12 @@ def main():
                                  pd.concat([ps[["nombre", "pos", "nfl", "dueno", "clave"]],
                                             pd.DataFrame(semcols, index=ps.index)], axis=1).fillna(0)),
             "App_Valor": tabla(["Jugador", "Pos", "NFL", "Dueño", "Valor", "VOR ROS", "Pts ROS", "Reemplazo",
-                                "Rank pos valor", "Tier", "Cal ROS", "Cal playoffs"],
+                                "Rank pos valor", "Tier", "Cal ROS", "Cal playoffs",
+                                "Rival S+1", "Factor S+1", "Rival S+2", "Factor S+2"],
                                d.sort_values("valor", ascending=False)[
                                    ["nombre", "pos", "nfl", "dueno", "valor", "vor", "ros", "reemplazo",
-                                    "rank_valor", "tier", "cal_ros", "cal_po"]].round(1)),
+                                    "rank_valor", "tier", "cal_ros", "cal_po",
+                                    "riv1", "fac1", "riv2", "fac2"]].round(2)),
             "App_Novedades": tabla(["Jugador", "Pos", "NFL", "Equipo Fantasy", "Lesión", "Estado", "Prob",
                                     "Regreso", "Nota"],
                                    nov.assign(
