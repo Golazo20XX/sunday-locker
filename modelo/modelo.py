@@ -500,7 +500,7 @@ def main():
     pg26 = cargar_partidos(st26, pbp26, games, TEMPORADA)
     pg25 = cargar_partidos(st25, pbp25, games, TEMPORADA - 1)
     t26, t25 = por_jugador(pg26, tasas), por_jugador(pg25, tasas)
-    df = pts_esperados(t26, t25, pg26, tasas)
+    df = pts_esperados(t26, t25, pg26, tasas); import rol; df = rol.ajustar(df, pg26, pg25)
 
     # Equipo y posición actuales desde Sleeper (cambios de equipo, novatos sin stats)
     gsis_a_sl, sl_a_gsis = {}, {}
