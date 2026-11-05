@@ -31,3 +31,4 @@ if(typeof vlMap==='function'){var _vm=vlMap;
 if(window.J)bajar();
 })();
 (function(){var st=document.createElement('style');st.textContent='.pmc .s{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.25}';document.head.appendChild(st)})();
+(function(){var st=document.createElement('style');st.textContent='button,[onclick],.row,.pmc{touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,.08);cursor:pointer}';document.head.appendChild(st)})();
