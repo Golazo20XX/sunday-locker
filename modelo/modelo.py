@@ -563,7 +563,7 @@ def main():
     df["vor"] = (df["ros"] - df["reemplazo"]).clip(lower=0)
     vw = (df["ros"] - df.groupby("pos")["ros"].transform(lambda s: s.nlargest({"QB": 24, "RB": 52, "WR": 64, "TE": 22}.get(s.name, 14) + 1).iloc[-3:].mean())).clip(lower=0); df["valor"] = (75 * df["vor"] / df["vor"].max() + 25 * vw / vw.max()).round(1)
     df["rank_valor"] = df.groupby("pos")["valor"].rank(ascending=False, method="min").astype(int)
-    df["tier"] = (1 + (100 - df["valor"]) // 20).clip(upper=5).astype(int)
+    df["tier"] = (1 + (100 - df["valor"]) // 20).clip(upper=5).astype(int); import valor; df = valor.calcular(df, proy, semana, pg25, gsis_a_sl)
 
     guardar_historial(df, proy, semana, cal, ahora)
     prec = precision(pg26)
