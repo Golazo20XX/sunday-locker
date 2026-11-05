@@ -491,8 +491,7 @@ def main():
     pbp26 = bajar("pbp", "parquet", y=TEMPORADA)
     pbp25 = bajar("pbp", "parquet", y=TEMPORADA - 1)
     slp = bajar("sl_players", "json") or {}
-    espn = bajar("espn_inj", "json")
-         for p in slp.values(): if p.get("team") == "LAR": p["team"] = "LA"
+    espn = bajar("espn_inj", "json"); [p.update(team="LA") for p in slp.values() if p.get("team") == "LAR"]      
     if games is None or st26 is None or st25 is None:
         sys.exit("Faltan datos esenciales de nflverse: no actualizo para no dejar la app con datos malos.")
 
