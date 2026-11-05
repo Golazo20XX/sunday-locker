@@ -492,6 +492,7 @@ def main():
     pbp25 = bajar("pbp", "parquet", y=TEMPORADA - 1)
     slp = bajar("sl_players", "json") or {}
     espn = bajar("espn_inj", "json")
+    for p in slp.values(): if p.get("team") == "LAR": p["team"] = "LA"
     if games is None or st26 is None or st25 is None:
         sys.exit("Faltan datos esenciales de nflverse: no actualizo para no dejar la app con datos malos.")
 
@@ -577,7 +578,7 @@ def main():
         for r in rosters:
             nombre_eq = users.get(r.get("owner_id"), f"Equipo {r.get('roster_id')}")
             for sid in r.get("players") or []:
-                dueno[sl_a_gsis.get(sid, f"{sid} DST" if sid.isalpha() else sid)] = nombre_eq
+                dueno[sl_a_gsis.get(sid, f"{'LA' if sid == 'LAR' else sid} DST" if sid.isalpha() else sid)] = nombre_eq
         d = df.copy()
         d["dueno"] = [dueno.get(i, "Libre") for i in d.index]
         d["clave"] = d.index
