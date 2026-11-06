@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import requests
 
-PESO_MERCADO = 0.40
+PESO_MERCADO = 0.40; PESO_MODELO = 0.35; TOPE = 2.0
 TITULAR = dict(QB=13, RB=28, WR=43, TE=13, K=13, DST=13)   # nivel de un titular de la liga, por semana
 FC_URL = "https://api.fantasycalc.com/values/current?isDynasty=false&numQbs=1&numTeams=12&ppr=0.5"
 SENAL = 8  # diferencia (puntos de valor) para marcar comprar / vender
@@ -201,7 +201,7 @@ def calcular(df, proy, semana, pg25, gsis_a_sl):
         modelo, merc = opcion, pd.Series(np.nan, index=df.index)
     final = modelo.copy()
     tiene = merc.notna()
-    final[tiene] = (1 - PESO_MERCADO) * modelo[tiene] + PESO_MERCADO * merc[tiene]
+    tiene = merc.notna() & (merc > 0) final[tiene] = merc[tiene] * (modelo[tiene].clip(lower=0.1) / merc[tiene]).clip(1 / TOPE, TOPE) ** PESO_MODELO
     final = 100 * final / final.max()
     df["vor"] = vm.round(1)
     df["valor"] = final.round(1)
