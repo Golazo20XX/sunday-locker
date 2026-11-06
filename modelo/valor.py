@@ -5,26 +5,26 @@ Valor de trade (0-100) basado en evidencia.
    (medida con 2025). Se guarda como "VOR ROS" y se usa para K y DST.
 2) Valor de mercado: FantasyCalc (valores redraft calculados a partir de millones de trades
    reales, 12 equipos, 1 QB, 0.5 PPR, se actualizan cada 3 h), llevado a 0-100.
-3) Escala: el modelo ordena a los jugadores de cada posición por sus puntos ROS proyectados y a cada
-   puesto le asigna lo que el mercado paga por ese puesto (ej. el RB que el modelo pone 30.º vale lo
-   que el mercado paga por un RB30). K y DST, sin mercado suficiente, usan el valor por encima del titular.
-4) Valor final = (1 - PESO_MERCADO) x modelo + PESO_MERCADO x mercado.
+3) Escala: por posición se ajusta una curva suave "precio de mercado según puntos ROS" y cada jugador
+   recibe el precio que corresponde a los puntos que el modelo le proyecta. K y DST, sin mercado
+   suficiente, usan el valor por encima del titular.
+4) Valor final: parte del precio de mercado (lo que realmente paga la liga) y el modelo lo ajusta:
+   final = mercado x (modelo / mercado) ^ PESO_MODELO, con la razón modelo/mercado limitada entre
+   1/TOPE y TOPE. Si no hay precio de mercado, se usa el valor del modelo.
+   Para que el valor no cambie a mitad de semana, se usan solo las semanas futuras de todos.
 """
 import json, math, os
 import numpy as np
 import pandas as pd
 import requests
 
-PESO_MERCADO = 0.40
+PESO_MODELO = 0.35   # cuánto puede mover el modelo al precio de mercado (0 = solo mercado)
+TOPE = 2.0           # el modelo puede duplicar o reducir a la mitad el precio de mercado, no más
 TITULAR = dict(QB=13, RB=28, WR=43, TE=13, K=13, DST=13)   # nivel de un titular de la liga, por semana
 FC_URL = "https://api.fantasycalc.com/values/current?isDynasty=false&numQbs=1&numTeams=12&ppr=0.5"
 SENAL = 8  # diferencia (puntos de valor) para marcar comprar / vender
 
 _EXTRA = {}
-
-
-def _phi(x):
-    return np.exp(-0.5 * x * x) / math.sqrt(2 * math.pi)
 
 
 def _Phi(x):
@@ -154,30 +154,23 @@ def mercado(gsis_a_sl):
     return pd.Series(out, dtype=float)
 
 
-def a_escala(mk, ref):
-    """Lleva el valor de mercado a la escala del modelo: mismo percentil -> mismo valor."""
-    comun = mk.index.intersection(ref.index)
-    if len(comun) < 20:
-        return pd.Series(dtype=float)
-    pct = mk.rank(pct=True)
-    ref_ord = np.sort(ref[comun].values)
-    q = np.linspace(0, 1, len(ref_ord))
-    return pd.Series(np.interp(pct.values, q, ref_ord), index=mk.index)
-
-
 def modelo_por_mercado(df, mk100):
-    """Valor del modelo en la escala del mercado: dentro de cada posición, el jugador que el modelo
-    proyecta en el puesto N recibe lo que el mercado paga por el puesto N de esa posición.
-    Así la escala (cuánto vale un RB40, un TE16, etc.) sale de trades reales y el modelo decide el orden."""
+    """Valor del modelo en la escala del mercado, con una curva suave por posición:
+    se ajusta log(precio de mercado) contra los puntos ROS del modelo con los jugadores que tienen
+    precio, y cada jugador recibe el precio que corresponde a SUS puntos proyectados.
+    Así poca diferencia de puntos da poca diferencia de valor, y la escala sale de trades reales."""
     out = pd.Series(np.nan, index=df.index)
     for p in TITULAR:
         m = df["pos"] == p
-        mv = np.sort(mk100[mk100.index.isin(df.index[m])].values)[::-1]
-        if len(mv) < 10:
+        cerca = df.index[m][(df.loc[m, "ros"].rank(ascending=False) <= 2 * TITULAR[p]).values]
+        ref = mk100[mk100.index.isin(cerca)]  # solo jugadores relevantes (evita lesionados y suplentes)
+        ref = ref[ref > 0.3]
+        if len(ref) < 10:
             continue
-        orden = (df.loc[m, "ros"].rank(ascending=False, method="first") - 1).astype(int).values
-        cola = mv[-1] * np.exp(-(orden - len(mv) + 1) / 8.0)
-        out[m] = np.where(orden < len(mv), mv[np.minimum(orden, len(mv) - 1)], cola)
+        b, a = np.polyfit(df.loc[ref.index, "ros"].values, np.log(ref.values), 1)
+        if b <= 0:
+            continue
+        out[m] = np.minimum(100, np.exp(a + b * df.loc[m, "ros"].clip(lower=0)))
     return out
 
 
@@ -191,13 +184,15 @@ def calcular(df, proy, semana, pg25, gsis_a_sl):
     mk = mk[mk.index.isin(df.index)]
     if len(mk) >= 30:
         mk100 = 100 * mk / mk.max()
-        modelo = modelo_por_mercado(df, mk100).fillna(opcion)
+        futuras = [w for w in proy.columns if w > semana]
+        modelo = modelo_por_mercado(df.assign(ros=proy[futuras].sum(axis=1)), mk100).fillna(opcion)
         merc = mk100.reindex(df.index)
     else:
         modelo, merc = opcion, pd.Series(np.nan, index=df.index)
     final = modelo.copy()
-    tiene = merc.notna()
-    final[tiene] = (1 - PESO_MERCADO) * modelo[tiene] + PESO_MERCADO * merc[tiene]
+    tiene = merc.notna() & (merc > 0)
+    razon = (modelo[tiene].clip(lower=0.1) / merc[tiene]).clip(1 / TOPE, TOPE)
+    final[tiene] = merc[tiene] * razon ** PESO_MODELO
     final = 100 * final / final.max()
     df["vor"] = vm.round(1)
     df["valor"] = final.round(1)
