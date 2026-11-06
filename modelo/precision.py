@@ -8,7 +8,12 @@ Precisión del modelo vs Sleeper, contra los puntos reales.
 - Semanas con proyección guardada en historial/ (modelo completo, congelada antes del primer partido):
   comparación directa con Sleeper.
 Se compara solo a jugadores relevantes (proyección de alguno de los dos >= 5 pts) que jugaron.
-Salida: data/precision.json (la app lo muestra en Jugadores > Ranking).
+- Las proyecciones de Sleeper se pasan al puntaje de la liga (TD de pase = 6, intercepción = -2).
+- Si existe historial/puro_<año>_sNN.csv se usa ese (modelo sin mezclar), para no medir la mezcla
+  contra sí misma.
+- Mezcla: busca el peso de Sleeper (0 a 1, de a 0.05) que da menos error por posición y lo guarda
+  en data/mezcla.json; mezcla.py lo aplica en la siguiente corrida de modelo.py.
+Salida: data/precision.json (la app lo muestra en Jugadores > Ranking) y data/mezcla.json.
 """
 import json, os, re, sys
 import numpy as np
@@ -21,11 +26,12 @@ import __main__  # noqa: E402
 for _k in ["URL", "NV", "bajar", "norm", "pts_jugador", "TEMPORADA", "RAIZ"]:
     setattr(__main__, _k, getattr(m, _k))
 import rol  # noqa: E402
+import mezcla  # noqa: E402
 
-SL_PROY = ("https://api.sleeper.app/projections/nfl/{y}/{w}?season_type=regular"
-           "&position[]=QB&position[]=RB&position[]=WR&position[]=TE")
 POS = ["QB", "RB", "WR", "TE"]
 MIN_PROY = 5.0
+MIN_FILAS_MEZCLA = 100
+GRILLA = [round(x * 0.05, 2) for x in range(21)]
 
 
 def ids_sleeper():
@@ -42,32 +48,22 @@ def ids_sleeper():
 def sleeper_proy(y, w, sl_a_gsis, semana):
     carpeta = os.path.join(m.RAIZ, "historial")
     os.makedirs(carpeta, exist_ok=True)
-    cache = os.path.join(carpeta, f"sleeper_{y}_s{w:02d}.csv")
+    cache = os.path.join(carpeta, f"sleeper_liga_{y}_s{w:02d}.csv")
     if os.path.exists(cache):
         c = pd.read_csv(cache, dtype={"id": str})
         return pd.Series(c["proy"].values, index=c["id"].values)
-    data = None
-    if m.LOCAL:
-        ruta = os.path.join(m.LOCAL, f"sleeper_proy_{w}.json")
-        data = json.load(open(ruta)) if os.path.exists(ruta) else None
-    else:
-        try:
-            r = requests.get(SL_PROY.format(y=y, w=w), timeout=60, headers={"User-Agent": "fantasy-modelo"})
-            r.raise_for_status()
-            data = r.json()
-        except Exception as e:
-            print(f"AVISO: no pude bajar proyecciones de Sleeper semana {w} ({e})")
-            return pd.Series(dtype=float)
-    out = {}
-    for x in data or []:
-        g = sl_a_gsis.get(str(x.get("player_id")))
-        v = (x.get("stats") or {}).get("pts_half_ppr")
-        if g and isinstance(v, (int, float)):
-            out[g] = float(v)
-    s = pd.Series(out, dtype=float)
+    s = mezcla.bajar_sleeper(y, w, sl_a_gsis, m.PTS)
     if w < semana and len(s):  # semana ya jugada: la proyección no cambia más, se guarda
         pd.DataFrame({"id": s.index, "proy": s.values}).to_csv(cache, index=False)
     return s
+
+
+def archivo_modelo(y, w):
+    for pref in ("puro", "proy"):
+        ruta = os.path.join(m.RAIZ, "historial", f"{pref}_{y}_s{w:02d}.csv")
+        if os.path.exists(ruta):
+            return ruta
+    return None
 
 
 def filas_con_semana(pg, sn, ant):
@@ -110,18 +106,16 @@ def main():
     sn26, sn25 = rol.snaps(y), rol.snaps(y - 1)
     tr = filas_con_semana(pg25, sn25, rol.ppg_previo(y - 2))
     te = filas_con_semana(pg26, sn26, rol.ppg_previo(y - 1))
-    guardadas = {int(re.match(rf"proy_{y}_s(\d+)\.csv", f).group(1))
-                 for f in os.listdir(os.path.join(m.RAIZ, "historial"))
-                 if re.match(rf"proy_{y}_s(\d+)\.csv", f)} if os.path.isdir(os.path.join(m.RAIZ, "historial")) else set()
-    filas = []
+    filas, todas = [], []
     for w in jugadas:
         if w < 4:
             continue
         sp = sleeper_proy(y, w, sl_a_gsis, semana)
         if not len(sp):
             continue
-        if w in guardadas:
-            h = pd.read_csv(os.path.join(m.RAIZ, "historial", f"proy_{y}_s{w:02d}.csv"))
+        guardado = archivo_modelo(y, w)
+        if guardado:
+            h = pd.read_csv(guardado)
             h = h[h["Pos"].isin(POS)]
             d = pd.DataFrame({"id": h["Clave"], "pos": h["Pos"], "mod": h["Proy"]})
             fuente = "Modelo completo (guardado antes de la semana)"
@@ -143,6 +137,7 @@ def main():
         d["real"] = [real.get((i, w), np.nan) for i in d["id"]]
         d = d.dropna(subset=["sl", "real"])
         d = d[(d["mod"] >= MIN_PROY) | (d["sl"] >= MIN_PROY)]
+        todas.append(d[["pos", "mod", "sl", "real"]])
         for p, g in d.groupby("pos"):
             filas.append([w, p, int(len(g)), round(float((g["real"] - g["mod"]).abs().mean()), 2),
                           round(float((g["real"] - g["sl"]).abs().mean()), 2), fuente])
@@ -159,11 +154,31 @@ def main():
     print("Precisión vs Sleeper (error medio por jugador, pts; menos es mejor):")
     for p, n, em, es, gana in tot:
         print(f"  {p}: {n} jugadores · modelo {em} · Sleeper {es} · mejor: {gana}")
+
+    # 2) Mezcla: peso de Sleeper con menos error por posición
+    D = pd.concat(todas)
+    pesos, mz = {}, []
+    for p, g in D.groupby("pos"):
+        if len(g) < MIN_FILAS_MEZCLA:
+            continue
+        errs = [float(np.mean(np.abs(g["real"] - ((1 - a) * g["mod"] + a * g["sl"])))) for a in GRILLA]
+        k = int(np.argmin(errs))
+        pesos[p] = GRILLA[k]
+        mz.append([p, int(len(g)), GRILLA[k], round(errs[k], 2), round(errs[0], 2), round(errs[-1], 2)])
+    print("Mezcla (peso de Sleeper con menos error; 0 = solo modelo, 1 = solo Sleeper):")
+    for p, n, a, em, e0, e1 in mz:
+        print(f"  {p}: peso Sleeper {a} · error mezcla {em} · solo modelo {e0} · solo Sleeper {e1}")
+
+    generado = pd.Timestamp.now("UTC").isoformat(timespec="minutes")
     os.makedirs(os.path.join(m.RAIZ, "data"), exist_ok=True)
     with open(os.path.join(m.RAIZ, "data", "precision.json"), "w", encoding="utf-8") as f:
-        json.dump({"generado": pd.Timestamp.utcnow().isoformat(timespec="minutes"),
+        json.dump({"generado": generado,
                    "total": [["Pos", "Jugadores", "Error modelo", "Error Sleeper", "Mejor"]] + tot,
-                   "semanas": [list(t.columns)] + t.values.tolist()}, f, ensure_ascii=False, default=str)
+                   "semanas": [list(t.columns)] + t.values.tolist(),
+                   "mezcla": [["Pos", "Jugadores", "Peso Sleeper", "Error mezcla", "Error modelo",
+                               "Error Sleeper"]] + mz}, f, ensure_ascii=False, default=str)
+    with open(os.path.join(m.RAIZ, "data", "mezcla.json"), "w", encoding="utf-8") as f:
+        json.dump({"generado": generado, "peso_sleeper": pesos}, f, ensure_ascii=False)
 
 
 if __name__ == "__main__":
