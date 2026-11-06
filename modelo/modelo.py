@@ -301,7 +301,7 @@ def pts_esperados(t26, t25, pg26, tasas):
     m25 = mezcla(df["ppg25"].fillna(0), df["xfp25"])
     # Cambio de rol: si el uso 2026 es muy distinto al de 2025, 2026 pesa más rápido
     ratio = (df["xfp"] / df["xfp25"]).where((df["G"] >= 2) & (df["xfp25"] > 0))
-    inten = ((np.abs(np.log(ratio)) - np.log(P["CAMBIO_MIN"])) /
+    inten = ((np.abs(np.log(ratio.clip(lower=1e-9))) - np.log(P["CAMBIO_MIN"])) /
              (np.log(P["CAMBIO_MAX"]) - np.log(P["CAMBIO_MIN"]))).clip(0, 1).fillna(0)
     k = P["K26"] - (P["K26"] - P["K26_CAMBIO"]) * inten
     w = np.where(df["G25"] < P["MIN_G25"], 1, df["G"] / (df["G"] + k))
