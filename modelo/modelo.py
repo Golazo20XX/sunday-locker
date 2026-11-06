@@ -200,8 +200,7 @@ def calcular(df, proy, semana, pg25, gsis_a_sl):
     else:
         modelo, merc = opcion, pd.Series(np.nan, index=df.index)
     final = modelo.copy()
-    tiene = merc.notna()
-    tiene = merc.notna() & (merc > 0) final[tiene] = merc[tiene] * (modelo[tiene].clip(lower=0.1) / merc[tiene]).clip(1 / TOPE, TOPE) ** PESO_MODELO
+    tiene = merc.notna() & (merc > 0); final[tiene] = merc[tiene] * (modelo[tiene].clip(lower=0.1) / merc[tiene]).clip(1 / TOPE, TOPE) ** PESO_MODELO
     final = 100 * final / final.max()
     df["vor"] = vm.round(1)
     df["valor"] = final.round(1)
