@@ -13,6 +13,8 @@ Se compara solo a jugadores relevantes (proyección de alguno de los dos >= 5 pt
   contra sí misma.
 - Mezcla: busca el peso de Sleeper (0 a 1, de a 0.05) que da menos error por posición y lo guarda
   en data/mezcla.json; mezcla.py lo aplica en la siguiente corrida de modelo.py.
+  Con 3+ semanas del modelo completo guardado, el peso se calcula solo con esas semanas (comparación
+  justa). Mientras tanto se usan todas las semanas, con el peso de Sleeper limitado a TOPE_SLEEPER.
 Salida: data/precision.json (la app lo muestra en Jugadores > Ranking) y data/mezcla.json.
 """
 import json, os, re, sys
@@ -32,6 +34,8 @@ POS = ["QB", "RB", "WR", "TE"]
 MIN_PROY = 5.0
 MIN_FILAS_MEZCLA = 100
 GRILLA = [round(x * 0.05, 2) for x in range(21)]
+SEMANAS_COMPLETAS_MIN = 3
+TOPE_SLEEPER = 0.6
 
 
 def ids_sleeper():
@@ -137,7 +141,7 @@ def main():
         d["real"] = [real.get((i, w), np.nan) for i in d["id"]]
         d = d.dropna(subset=["sl", "real"])
         d = d[(d["mod"] >= MIN_PROY) | (d["sl"] >= MIN_PROY)]
-        todas.append(d[["pos", "mod", "sl", "real"]])
+        todas.append(d[["pos", "mod", "sl", "real"]].assign(week=w, completo=bool(guardado)))
         for p, g in d.groupby("pos"):
             filas.append([w, p, int(len(g)), round(float((g["real"] - g["mod"]).abs().mean()), 2),
                           round(float((g["real"] - g["sl"]).abs().mean()), 2), fuente])
@@ -157,17 +161,25 @@ def main():
 
     # 2) Mezcla: peso de Sleeper con menos error por posición
     D = pd.concat(todas)
+    n_comp = int(D.loc[D["completo"], "week"].nunique())
     pesos, mz = {}, []
     for p, g in D.groupby("pos"):
+        gc = g[g["completo"]]
+        if n_comp >= SEMANAS_COMPLETAS_MIN and len(gc) >= MIN_FILAS_MEZCLA:
+            g, grilla, modo = gc, GRILLA, f"solo modelo completo ({n_comp} semanas)"
+        else:
+            grilla, modo = [a for a in GRILLA if a <= TOPE_SLEEPER], f"todas las semanas, tope {TOPE_SLEEPER}"
         if len(g) < MIN_FILAS_MEZCLA:
             continue
-        errs = [float(np.mean(np.abs(g["real"] - ((1 - a) * g["mod"] + a * g["sl"])))) for a in GRILLA]
+        errs = [float(np.mean(np.abs(g["real"] - ((1 - a) * g["mod"] + a * g["sl"])))) for a in grilla]
+        e_sl = float(np.mean(np.abs(g["real"] - g["sl"])))
         k = int(np.argmin(errs))
-        pesos[p] = GRILLA[k]
-        mz.append([p, int(len(g)), GRILLA[k], round(errs[k], 2), round(errs[0], 2), round(errs[-1], 2)])
-    print("Mezcla (peso de Sleeper con menos error; 0 = solo modelo, 1 = solo Sleeper):")
-    for p, n, a, em, e0, e1 in mz:
-        print(f"  {p}: peso Sleeper {a} · error mezcla {em} · solo modelo {e0} · solo Sleeper {e1}")
+        pesos[p] = grilla[k]
+        mz.append([p, int(len(g)), grilla[k], round(errs[k], 2), round(errs[0], 2), round(e_sl, 2), modo])
+    print(f"Mezcla (peso de Sleeper con menos error; 0 = solo modelo, 1 = solo Sleeper). "
+          f"Semanas con modelo completo: {n_comp} (hacen falta {SEMANAS_COMPLETAS_MIN} para usar solo esas)")
+    for p, n, a, em, e0, e1, modo in mz:
+        print(f"  {p}: peso Sleeper {a} · error mezcla {em} · solo modelo {e0} · solo Sleeper {e1} · {modo}")
 
     generado = pd.Timestamp.now("UTC").isoformat(timespec="minutes")
     os.makedirs(os.path.join(m.RAIZ, "data"), exist_ok=True)
@@ -176,9 +188,9 @@ def main():
                    "total": [["Pos", "Jugadores", "Error modelo", "Error Sleeper", "Mejor"]] + tot,
                    "semanas": [list(t.columns)] + t.values.tolist(),
                    "mezcla": [["Pos", "Jugadores", "Peso Sleeper", "Error mezcla", "Error modelo",
-                               "Error Sleeper"]] + mz}, f, ensure_ascii=False, default=str)
+                               "Error Sleeper", "Base"]] + mz}, f, ensure_ascii=False, default=str)
     with open(os.path.join(m.RAIZ, "data", "mezcla.json"), "w", encoding="utf-8") as f:
-        json.dump({"generado": generado, "peso_sleeper": pesos}, f, ensure_ascii=False)
+        json.dump({"generado": generado, "peso_sleeper": pesos, "semanas_completas": n_comp}, f, ensure_ascii=False)
 
 
 if __name__ == "__main__":
