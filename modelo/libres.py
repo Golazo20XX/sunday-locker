@@ -56,6 +56,97 @@ def oferta_waiver(mej_sem, rest):
     return max(0, min(mx, max(1, round(mx * 0.85)))), mx
 
 
+# ---------- Radar de noticias automático (reemplaza el radar escrito a mano en el Excel) ----------
+RADAR_TOP = 12          # filas del radar
+RADAR_HORAS = 48        # ventana de "más agregados" en Sleeper
+RADAR_MIN_ROS = 5.0     # pts por semana ROS mínimos del suplente para mostrarlo
+URL_TREND = "https://api.sleeper.app/v1/players/nfl/trending/add?lookback_hours={h}&limit=60"
+URL_PLAYERS = "https://api.sleeper.app/v1/players/nfl"
+_RADAR = {}
+
+
+def _clave(s):
+    s = m.norm(str(s or "")) if hasattr(m, "norm") else str(s or "").lower()
+    s = re.sub(r"[.'\u2019,-]", "", s)
+    s = re.sub(r"\b(jr|sr|ii|iii|iv|v)\b", "", s)
+    return re.sub(r"\s+", "", s)
+
+
+def _malo(n):
+    pr = n.get("Prob")
+    if isinstance(pr, (int, float)) and pr < 0.5:
+        return True
+    return bool(re.match(r"(out|ir|pup|sus|doubt|fuera|baja)", str(n.get("Estado") or "").lower()))
+
+
+def _trending():
+    """{clave del nombre: altas en Sleeper en las últimas RADAR_HORAS}, una sola vez por corrida."""
+    if "t" not in _RADAR:
+        _RADAR["t"] = {}
+        try:
+            tr = sm.json_url("sl_trending", URL_TREND.format(h=RADAR_HORAS)) or []
+            pl = sm.json_url("sl_players_nfl", URL_PLAYERS) or {}
+            for x in tr:
+                p = pl.get(str(x.get("player_id"))) or {}
+                nm = p.get("full_name") or f"{p.get('first_name', '')} {p.get('last_name', '')}".strip()
+                if nm:
+                    _RADAR["t"][_clave(nm)] = int(x.get("count") or 0)
+        except Exception as ex:
+            print(f"Radar: no pude leer los más agregados de Sleeper ({ex})")
+    return _RADAR["t"]
+
+
+def radar(ros, nov, valor):
+    """Filas de App_Radar: suplentes de titulares lesionados + los más agregados en Sleeper."""
+    tr, filas, vistos = _trending(), [], set()
+    por_eq = {}
+    for r in ros.values():
+        if r.get("Pos") in ("QB", "RB", "WR", "TE") and r.get("NFL"):
+            por_eq.setdefault((r["NFL"], r["Pos"]), []).append(r)
+
+    def fila(r, fuente, noticia, puntaje):
+        j = r["Jugador"]
+        if j in vistos:
+            return
+        vistos.add(j)
+        filas.append((puntaje, [j, r.get("Pos", ""), r.get("NFL", ""), r.get("Dueño", "Libre"),
+                                round(num((valor.get(j) or {}).get("Valor")), 1), round(num(r.get("ROS")), 1),
+                                fuente, noticia]))
+
+    # 1) titulares lesionados → su mejor suplente sano
+    for j, n in nov.items():
+        t = ros.get(j)
+        if not t or not _malo(n) or t.get("Pos") not in ("QB", "RB", "WR", "TE"):
+            continue
+        grupo = sorted([x for x in por_eq.get((t.get("NFL"), t["Pos"]), [])
+                        if x["Jugador"] != j and not _malo(nov.get(x["Jugador"]) or {})],
+                       key=lambda x: -num(x.get("ROS")))
+        if not grupo or num(grupo[0].get("ROS por semana")) < RADAR_MIN_ROS:
+            continue
+        s = grupo[0]
+        est = n.get("Estado") or "fuera"
+        alt = tr.get(_clave(s["Jugador"]), 0)
+        fila(s, "Lesiones (modelo)" + (f" + Sleeper ({alt} altas)" if alt else ""),
+             f"{t['NFL']}: {j} ({est}). {s['Jugador']} es el siguiente {t['Pos']} del equipo "
+             f"({num(s.get('ROS por semana')):.1f} pts por semana ROS).",
+             100 + num(s.get("ROS")) + alt / 100)
+
+    # 2) los más agregados en Sleeper que el modelo también ve con valor
+    for r in ros.values():
+        alt = tr.get(_clave(r["Jugador"]), 0)
+        if alt <= 0 or r.get("Pos") not in ("QB", "RB", "WR", "TE", "K", "DST"):
+            continue
+        fila(r, f"Sleeper: {alt:,} altas en {RADAR_HORAS} h".replace(",", "."),
+             f"Uno de los más agregados en Sleeper. El modelo le da {num(r.get('ROS')):.1f} pts ROS "
+             f"({num(r.get('ROS por semana')):.1f} por semana).",
+             num(r.get("ROS")) + min(alt, 50000) / 1000)
+
+    filas.sort(key=lambda x: -x[0])
+    libres = [f for f in filas if f[1][3] == "Libre"]
+    otros = [f for f in filas if f[1][3] != "Libre"]
+    return [f[1] for f in (libres + otros)[:RADAR_TOP]]
+
+
 def main():
     for liga, lg in m.LIGAS.items():
         nombre = re.sub(r"[^a-z0-9]+", "_", m.norm(liga))
@@ -198,10 +289,18 @@ def main():
                                    "Otras"]] + byes
             out["App_Libres"] = [["Jugador", "Pos", "NFL", "ROS", "Proy sem", "Estado", "Puntaje", "Por qué"]] \
                 + fut[:LIBRES_TOP]
+            try:
+                valor = {r["Jugador"]: r for r in sm.tabla_obj(out.get("App_Valor"))}
+                rad = radar(ros, nov, valor)
+                if rad:
+                    out["App_Radar"] = [["Jugador", "Pos", "NFL", "Dueño", "Valor 2026", "ROS", "Fuente", "Noticia"]] + rad
+            except Exception as ex:
+                rad = []
+                print(f"Radar {liga}: no pude armarlo ({ex}); la app usa el del Excel")
             with open(ruta, "w", encoding="utf-8") as f:
                 json.dump(out, f, ensure_ascii=False, separators=(",", ":"), default=str)
             print(f"Libres {liga}: {len(stream)} streaming, {len(waiv)} altas, {len(byes)} avisos de byes, "
-                  f"{min(len(fut), LIBRES_TOP)} libres a futuro")
+                  f"{min(len(fut), LIBRES_TOP)} libres a futuro, {len(rad)} en el radar")
         except Exception as ex:
             print(f"Libres {liga}: no pude armar waivers/streaming ({ex}); la app usa lo anterior")
 
