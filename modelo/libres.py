@@ -25,6 +25,7 @@ WAIV_TOP = 8            # altas sugeridas por equipo
 WAIV_MIN = 3.0          # mejora mínima de pts ROS para sugerir un alta
 WAIV_TOPE = 0.6         # máximo % del FAAB restante en una sola oferta
 WAIV_PTS_SEM = 12.0     # mejora por semana que justificaría ese máximo
+WAIV_REF = 3            # la oferta se calcula contra el 3.er mejor libre de la misma posición (lo que conseguirías gratis)
 BYES_SEMANAS = 4        # semanas hacia adelante que se revisan
 BYES_MIN = 2.0          # pts de mejora para avisar
 LIBRES_TOP = 25
@@ -130,8 +131,8 @@ def radar(ros, nov, valor):
         s = grupo[0]
         dj = _RADAR.get("pl", {}).get(_clave(j), (None, 99999))
         ds = _RADAR.get("pl", {}).get(_clave(s["Jugador"]), (None, 99999))
-        if ds[0] == 1 and ds[1] < dj[1]:
-            continue  # el "suplente" ya es el titular y el lesionado era su suplente (ej. Herbert / Lance)
+        if ds[1] < dj[1]:
+            continue  # el "suplente" vale más que el lesionado: no es noticia (ej. Herbert / Lance)
         est = n.get("Estado") or "fuera"
         alt = tr.get(_clave(s["Jugador"]), 0)
         fila(s, "Lesiones (modelo)" + (f" + Sleeper ({alt} altas)" if alt else ""),
@@ -227,8 +228,15 @@ def main():
                         if mejor is None or g > mejor[0]:
                             mejor = (g, d)
                     if mejor and mejor[0] >= WAIV_MIN:
+                        if c["Pos"] in ("K", "DST") and num(c["S"].get(w)) <= 0:
+                            continue  # K y DST se toman para jugar ya: no sugiero uno en bye o sin partido esta semana
                         altas.append((mejor[0], c, mejor[1]))
                 altas.sort(key=lambda x: -x[0])
+                # valor contra la alternativa gratis: el WAIV_REF-ésimo mejor libre de la misma posición
+                ref = {}
+                for g, c, d in altas:
+                    ref.setdefault(c["Pos"], []).append(g)
+                ref = {p: (v[WAIV_REF - 1] if len(v) >= WAIV_REF else 0.0) for p, v in ref.items()}
                 usados = set()
                 for g, c, d in altas:
                     if len(waiv) and sum(1 for x in waiv if x[0] == eqn) >= WAIV_TOP:
@@ -236,10 +244,17 @@ def main():
                     if c["Jugador"] in usados:
                         continue
                     usados.add(c["Jugador"])
-                    of, mx = oferta_waiver(g / max(1, len(semanas)), rest)
+                    marg = max(0.0, g - ref.get(c["Pos"], 0.0))  # lo que gana sobre un libre parecido
+                    if c["Pos"] in ("K", "DST"):
+                        of, mx = oferta_stream(marg / max(1, len(semanas)), rest)  # misma escala que Streaming
+                    else:
+                        of, mx = oferta_waiver(marg / max(1, len(semanas)), rest)
                     rr = ros.get(c["Jugador"], {})
                     porque = (f"+{g:.1f} pts en tu alineación hasta la semana {m.ULT_SEM} · "
+                              f"+{marg:.1f} sobre el siguiente libre de su posición · "
                               f"{num(rr.get('ROS por semana')):.1f} pts por semana ROS")
+                    if num(c["S"].get(w)) <= 0:
+                        porque += " · ⚠ no juega esta semana (bye o lesión)"
                     les = nov.get(c["Jugador"], {}).get("Estado")
                     if les:
                         porque += f" · {les}"
