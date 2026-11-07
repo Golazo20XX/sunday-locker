@@ -163,7 +163,13 @@ def aplicar(df, proy, games, cal, semana, slp):
             casa, vis = r["home_team"], r["away_team"]
             con_vegas = pd.notna(r.get("total_line"))
             lat, lon, techo = _lugar(r)
-            empezo = casa in ini.index and pd.Timestamp(ini.at[casa, "inicio"]) <= pd.Timestamp.now(tz="UTC")             if empezo:                 print(f"Clima: {vis} @ {casa} ya empezó o terminó; no lo ajusto")                 continue             if techo:                 print(f"Clima: {vis} @ {casa} con techo; sin ajuste")             if not techo and lat is not None and casa in ini.index:
+            empezo = casa in ini.index and pd.Timestamp(ini.at[casa, "inicio"]) <= pd.Timestamp.now(tz="UTC")
+            if empezo:
+                print(f"Clima: {vis} @ {casa} ya empezó o terminó; no lo ajusto")
+                continue
+            if techo:
+                print(f"Clima: {vis} @ {casa} con techo; sin ajuste")
+            if not techo and lat is not None and casa in ini.index:
                 try:
                     w = _pronostico(lat, lon, ini.at[casa, "inicio"])
                 except Exception as ex:
