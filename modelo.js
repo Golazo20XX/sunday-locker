@@ -8,7 +8,7 @@ function nom(m,names){return (names&&names[m.roster_id])||(LV.names&&LV.names[m.
 function syncR(){try{if(!R||!LV||!LV.m||LV.lid!==R.liga_id||!LV.started)return;var mine=lvPairs().filter(function(x){return x.me})[0];if(!mine)return;
  if(R._pre==null)R._pre={y:R.proy_yo_sleeper,r:R.proy_rival_sleeper,p:R.prob_ganar};R.proy_yo_sleeper=mine.a.live;R.proy_rival_sleeper=mine.b.live;R.prob_ganar=mine.p;R.rival=mine.b.name}catch(e){}}
 if(hay('render')){var _r=render;window.render=function(){try{if(S.tab==='matchup'&&S.sub.mt==='En vivo'){S.sub.mt='Resumen';S.sub.pt='Mi partido';if(typeof WK!=='undefined')WK.sel=null}}catch(e){}syncR();return _r.apply(this,arguments)}}
-if(hay('liveLoad')){var _ll=liveLoad;window.liveLoad=function(){var q=_ll.apply(this,arguments);try{q&&q.then&&q.then(function(){if(S.tab==='matchup'&&typeof pmRerender==='function')pmRerender()})}catch(e){}return q}}
+if(hay('liveLoad')){var _ll=liveLoad;window.liveLoad=function(){var t0=LV.t,l0=LV.lid,q=_ll.apply(this,arguments);try{q&&q.then&&q.then(function(){if((LV.t!==t0||LV.lid!==l0)&&S.tab==='matchup'&&typeof pmRerender==='function')pmRerender()})}catch(e){}return q}}
 /* 5) partidos de la liga: siempre con proyección en vivo y probabilidad */
 if(hay('pmList')&&hay('lvTeam')){var _pl=pmList;window.pmList=function(d,names,rid,w){if(!vivoOk(w)){if(typeof liveLoad==='function'&&w===wkBase())liveLoad(false);return _pl.apply(this,arguments)}
  var ix=lvIdx(),by=pmPairs(d);var keys=Object.keys(by).sort(function(x,y){var mx=by[x].some(function(m){return m.roster_id===rid}),my=by[y].some(function(m){return m.roster_id===rid});return (my?1:0)-(mx?1:0)||x-y});
