@@ -635,4 +635,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main(); import semana; semana.main(); import libres; libres.main(); import trades; trades.main(); import simulacion; simulacion.main()
+    main(); import semana; semana.main(); import libres; libres.main(); import trades; trades.main(); import simulacion; simulacion.main(); import app; app.main()
