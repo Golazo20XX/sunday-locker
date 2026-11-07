@@ -217,3 +217,62 @@ def aplicar(df, proy, games, cal, semana, slp):
     except Exception as ex:
         print(f"Clima: no pude ajustar ({ex}); proyecciones sin cambios")
         return proy, cab
+
+# ---------------------------------------------------------------- MEDICIÓN (¿el ajuste de clima ayuda?)
+def _carpeta():
+    import os
+    c = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "historial")
+    os.makedirs(c, exist_ok=True)
+    return c
+
+
+def guardar(df, proy_sin, proy_con, semana, cal, ahora):
+    """Guarda, por jugador ajustado, la proyección sin y con clima. Los partidos ya empezados se congelan."""
+    import os
+    try:
+        sin, con = proy_sin[semana].reindex(df.index), proy_con[semana].reindex(df.index)
+        m = (sin - con).abs() > 0.005
+        nuevo = pd.DataFrame({"Semana": semana, "Clave": df.index[m], "Jugador": df.loc[m, "nombre"],
+                              "Pos": df.loc[m, "pos"], "NFL": df.loc[m, "nfl"],
+                              "Grupo": df.loc[m, "pos"].map(GRUPO), "Sin": sin[m].round(2), "Con": con[m].round(2)})
+        ruta = os.path.join(_carpeta(), f"clima_s{semana:02d}.csv")
+        ini = cal[cal["week"] == semana].drop_duplicates("nfl").set_index("nfl")["inicio"]
+        empezo = {tm for tm, t in ini.items() if pd.Timestamp(t) <= pd.Timestamp(ahora)}
+        if os.path.exists(ruta):
+            viejo = pd.read_csv(ruta)
+            viejo = viejo[viejo["NFL"].isin(empezo)]            # lo ya jugado no se toca
+            nuevo = nuevo[~nuevo["NFL"].isin(empezo)]
+            nuevo = pd.concat([viejo, nuevo], ignore_index=True)
+        nuevo.to_csv(ruta, index=False)
+    except Exception as ex:
+        print(f"Clima: no pude guardar la medición ({ex})")
+
+
+def medir(pg):
+    """Compara el error real con y sin el ajuste de clima en las semanas ya jugadas."""
+    import os, re
+    try:
+        real = pg.groupby(["id", "week"])["pts"].sum()
+        jugadas = set(pg["week"].unique())
+        filas = []
+        for f in sorted(os.listdir(_carpeta())):
+            mm = re.match(r"clima_s(\d+)\.csv", f)
+            if not mm or int(mm.group(1)) not in jugadas:
+                continue
+            h = pd.read_csv(os.path.join(_carpeta(), f))
+            h["Real"] = [real.get((c, int(mm.group(1))), np.nan) for c in h["Clave"]]
+            filas.append(h.dropna(subset=["Real"]))
+        if not filas:
+            print("Clima (medición): todavía no hay semanas jugadas con ajustes de clima")
+            return
+        h = pd.concat(filas, ignore_index=True)
+        partes = []
+        for gr, g in h.groupby("Grupo"):
+            es, ec = (g["Real"] - g["Sin"]).abs().mean(), (g["Real"] - g["Con"]).abs().mean()
+            partes.append(f"{NOMBRE_GRUPO.get(gr, gr)}: {len(g)} jugadores, error {es:.2f} → {ec:.2f} "
+                          f"({'mejora' if ec < es else 'empeora'})")
+        es, ec = (h["Real"] - h["Sin"]).abs().mean(), (h["Real"] - h["Con"]).abs().mean()
+        print(f"Clima (medición, {h['Semana'].nunique()} semanas): total {len(h)} jugadores, "
+              f"error sin ajuste {es:.2f} → con ajuste {ec:.2f} · " + " · ".join(partes))
+    except Exception as ex:
+        print(f"Clima: no pude medir ({ex})")
