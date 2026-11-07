@@ -538,7 +538,7 @@ def main():
     cal = calendario(games, TEMPORADA)
     fac = factores_rival(pg26, pg25)
     les = estado_lesiones(slp, espn, cal, semana)
-    df, proy, det = proyectar(df, cal, fac, les, semana, ahora); import mezcla; proy = mezcla.aplicar(df, proy, semana, cal, ahora, sl_a_gsis, PTS, TEMPORADA)
+    df, proy, det = proyectar(df, cal, fac, les, semana, ahora); import mezcla; proy = mezcla.aplicar(df, proy, semana, cal, ahora, sl_a_gsis, PTS, TEMPORADA); import clima; proy, AJ = clima.aplicar(df, proy, games, cal, semana, slp)
 
     # Puntos ROS: semanas restantes (la actual solo si su partido no empezó)
     inicio = cal.set_index(["nfl", "week"])["inicio"]
@@ -627,6 +627,7 @@ def main():
                                        nota=[les.get(k, {}).get("nota", "") for k in nov["clave_les"]])[
                                        ["nombre", "pos", "nfl", "dueno", "les", "est", "prob", "regreso", "nota"]]),
             "App_PrecisionJug": tabla(list(prec.columns), prec) if len(prec) else [],
+                 "App_Ajustes": AJ,
         }
         nombre = re.sub(r"[^a-z0-9]+", "_", norm(liga))
         with open(os.path.join(RAIZ, "data", f"modelo_{nombre}.json"), "w", encoding="utf-8") as f:
