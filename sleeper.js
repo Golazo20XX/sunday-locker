@@ -31,7 +31,7 @@ function slApply(){if(!SL.ros||SL.lid!==R.liga_id||!D)return;var key=LIGA+'|'+SL
  var riv={};['App_RankSemana','App_Roster'].forEach(function(k){(D.datos[k]||[]).forEach(function(r){if(r.Jugador&&r.Rival&&!riv[r.Jugador])riv[r.Jugador]=r.Rival})});
  var info=function(id){id=String(id);if(/^[A-Z]{2,3}$/.test(id)){var tm=nfl(id),nm=ix.dst[tm]||(tm+' DST'),b=ix.byName[nm]||{};return {id:id,nm:nm,pos:'DST',nfl:tm,inj:'',proy:typeof b.proy==='number'?b.proy:null}}
   var p=(SL.pl&&SL.pl.m[id])||null,nm=ix.byId[id];if(!nm&&p)nm=ix.byNorm[slNorm(p[0])]||p[0];if(!nm)nm='Jugador '+id;
-  var b=ix.byName[nm]||{};return {id:id,nm:nm,pos:b.pos||(p&&p[1])||'',nfl:b.nfl||(p&&p[2])||'',inj:p?p[3]:'',body:p?p[4]:'',proy:typeof b.proy==='number'?b.proy:null}};
+  var b=ix.byName[nm];if(!b){var alt=ix.byNorm[slNorm(nm)];if(alt&&ix.byName[alt]){if(typeof FOTO!=='undefined'&&FOTO[nm]&&!FOTO[alt])FOTO[alt]=FOTO[nm];nm=alt;b=ix.byName[alt]}}b=b||{};return {id:id,nm:nm,pos:b.pos||(p&&p[1])||'',nfl:b.nfl||(p&&p[2])||'',inj:p?p[3]:'',body:p?p[4]:'',proy:typeof b.proy==='number'?b.proy:null}};
  var own={},by={},I={};
  SL.ros.forEach(function(r){var tn=SL.names[r.roster_id];by[tn]=r;(r.players||[]).forEach(function(id){var x=info(id);I[String(id)]=x;own[x.nm]=tn})});
  SL.I=I;SL.own=own;
