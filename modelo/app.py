@@ -13,8 +13,11 @@ import urllib.request
 
 USUARIO = 'joseandres87'
 TEMPORADA = '2026'
+# ID de Sleeper → nombre de la liga en el Excel (mismo nombre que data/modelo_<liga>.json)
+LIGAS = {'1387905805835051008': 'Football Ecuatoriano', '1387310811537506304': 'Football Is Life'}
 API = 'https://api.sleeper.app/v1/'
 DATA = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
+FOTOS_IDX = {}
 SLOTS = {'QB': 'QB', 'RB': 'RB', 'WR': 'WR', 'TE': 'TE', 'FLEX': 'FLEX', 'K': 'K', 'DEF': 'DST',
          'SUPER_FLEX': 'SFLEX', 'REC_FLEX': 'FLEX', 'WRRB_FLEX': 'FLEX'}
 
@@ -130,6 +133,18 @@ def armar_liga(lg, uid, players, semana):
     for r in rosters:  # fotos de toda la liga
         for pid in r.get('players') or []:
             fotos.append({'Jugador': jugador(pid)['nm'], 'ID Sleeper': str(pid)})
+    if '_idx' not in FOTOS_IDX:  # fotos de todos los jugadores del modelo (ranking, waivers, trades)
+        FOTOS_IDX['_idx'] = {}
+        for pid, p in players.items():
+            if p.get('full_name') and p.get('position') in ('QB', 'RB', 'WR', 'TE', 'K'):
+                q = clave(p['full_name'])
+                if q not in FOTOS_IDX['_idx'] or p.get('team'):
+                    FOTOS_IDX['_idx'][q] = pid
+    for q, j in nom.items():
+        if j.endswith(' DST'):
+            fotos.append({'Jugador': j, 'ID Sleeper': j[:-4]})
+        elif q in FOTOS_IDX['_idx']:
+            fotos.append({'Jugador': j, 'ID Sleeper': FOTOS_IDX['_idx'][q]})
 
     slots = [SLOTS[s] for s in lg.get('roster_positions') or [] if s in SLOTS]
     budget = (lg.get('settings') or {}).get('waiver_budget') or 100
@@ -145,10 +160,11 @@ def main():
     try:
         uid = get('user/' + USUARIO)['user_id']
         semana = int((get('state/nfl') or {}).get('display_week') or 1)
-        ligas = get('user/%s/leagues/nfl/%s' % (uid, TEMPORADA)) or []
-        con_modelo = {os.path.basename(p)[7:-5] for p in glob.glob(os.path.join(DATA, 'modelo_*.json'))}
-        if con_modelo:
-            ligas = [lg for lg in ligas if slug(lg['name']) in con_modelo] or ligas
+        ligas = []
+        for lid, nombre in LIGAS.items():
+            lg = get('league/' + lid)
+            lg['name'] = nombre
+            ligas.append(lg)
         players = get('players/nfl')
         ahora = (datetime.datetime.utcnow() - datetime.timedelta(hours=5)).strftime('%Y-%m-%d %H:%M')
         out = {'actualizado': ahora, 'activa': '', 'ligas': {}, 'comunes': {'App_Fotos': []}, 'respaldo': True}
