@@ -17,6 +17,11 @@ LAMBDA = 5.0      # regularización (evita pesos extremos)
 MIN_PREV = 2      # partidos previos mínimos en la temporada para usar la regresión
 COLS = ["const", "ppg", "forma", "carr_u2", "tgt_u2", "carr", "tgt", "snap_u", "snap_cambio",
         "pases_u2", "rz_c", "rz_t", "ppg_ant", "tiene_ant"]
+# Variables nuevas (se usan solo si mejoran el error contra los partidos reales de este año):
+# - tgt_sh_u2 / carr_sh_u2: % de los targets / carreras del equipo en sus últimos 2 partidos (rol real)
+# - perdidos: partidos del equipo que se perdió justo antes (vuelve de lesión) · volvio: 1 si se perdió alguno
+NUEVAS = ["tgt_sh_u2", "carr_sh_u2", "perdidos", "volvio"]
+COLS_NUEVO = COLS + NUEVAS
 INFORME = {}
 
 
@@ -54,6 +59,12 @@ def filas(pg, sn, ant, desde=4, hasta=99, solo_ultima=False):
     m = _m()
     pg = pg[pg["pos"].isin(POSICIONES)].copy()
     pg["snap"] = [sn.get((m.norm(n), t, int(w)), np.nan) for n, t, w in zip(pg["nombre"], pg["nfl"], pg["week"])]
+    eq = pg.groupby(["nfl", "week"])[["tgt", "carr"]].sum()
+    sem_eq = {t: sorted(g.index.get_level_values("week")) for t, g in eq.groupby(level="nfl")}
+
+    def share(u, c):
+        tot = sum(eq[c].get((t, w), 0) for t, w in zip(u["nfl"], u["week"]))
+        return float(u[c].sum() / tot) if tot > 0 else 0.0
     out, y, ids = [], [], []
     for pid, g in pg.sort_values("week").groupby("id"):
         g = g.reset_index(drop=True)
@@ -70,20 +81,24 @@ def filas(pg, sn, ant, desde=4, hasta=99, solo_ultima=False):
             snap_u = pr["snap"].iloc[-1] if pd.notna(pr["snap"].iloc[-1]) else (sn_ok.mean() if len(sn_ok) else 0.5)
             snap_m = sn_ok.mean() if len(sn_ok) else snap_u
             a = ant.get(pid)
+            ult_w, ult_t = int(pr["week"].iloc[-1]), pr["nfl"].iloc[-1]
+            hasta_w = 99 if solo_ultima else int(g.at[j, "week"])
+            perd = sum(1 for w in sem_eq.get(ult_t, []) if ult_w < w < hasta_w)
             out.append([1, pr["pts"].mean(), np.average(pr["pts"], weights=pesos), u2["carr"].mean(), u2["tgt"].mean(),
                         pr["carr"].mean(), pr["tgt"].mean(), snap_u, snap_u - snap_m, u2["pases"].mean(),
-                        pr["rz_c"].mean(), pr["rz_t"].mean(), a if a is not None else 0.0, 1.0 if a is not None else 0.0])
+                        pr["rz_c"].mean(), pr["rz_t"].mean(), a if a is not None else 0.0, 1.0 if a is not None else 0.0,
+                        share(u2, "tgt"), share(u2, "carr"), min(perd, 4), 1.0 if perd else 0.0])
             y.append(np.nan if solo_ultima else g.at[j, "pts"])
             ids.append((pid, g.at[0, "pos"]))
-    X = pd.DataFrame(out, columns=COLS)
+    X = pd.DataFrame(out, columns=COLS_NUEVO)
     X["id"] = [i for i, _ in ids]
     X["pos"] = [p for _, p in ids]
     X["y"] = y
     return X
 
 
-def entrenar(X):
-    A = X[COLS].values.astype(float)
+def entrenar(X, cols=COLS):
+    A = X[cols].values.astype(float)
     y = X["y"].values.astype(float)
     reg = LAMBDA * np.eye(A.shape[1])
     reg[0, 0] = 0
@@ -109,20 +124,30 @@ def ajustar(df, pg26, pg25, semana=None):
         a, b, h = tr[tr["pos"] == p], te[te["pos"] == p], hoy[hoy["pos"] == p]
         if len(a) < 100:
             continue
-        beta = entrenar(a)
+        cols = COLS
+        beta = entrenar(a, cols)
         if len(b) >= 30:
-            pred = np.clip(b[COLS].values @ beta, 0, None)
-            mae_n = float(np.mean(np.abs(b["y"] - pred)))
+            mae = lambda bt, cs: float(np.mean(np.abs(b["y"] - np.clip(b[cs].values @ bt, 0, None))))
+            mae_n = mae(beta, COLS)
+            beta2 = entrenar(a, COLS_NUEVO)
+            mae_2 = mae(beta2, COLS_NUEVO)
+            if mae_2 < mae_n - 0.01:  # las variables nuevas se quedan solo si bajan el error real
+                cols, beta, mae_v = COLS_NUEVO, beta2, mae_2
+                print(f"  {p}: variables nuevas (rol en el equipo y regreso de lesión) bajan el error "
+                      f"{mae_n:.2f} → {mae_2:.2f}; las uso")
+            else:
+                mae_v = mae_n
+                print(f"  {p}: variables nuevas no mejoran ({mae_n:.2f} → {mae_2:.2f}); sigo con las de antes")
             mae_p = float(np.mean(np.abs(b["y"] - b["ppg"])))
-            informe.append([p, int(len(b)), round(mae_n, 2), round(mae_p, 2)])
-            if mae_n > mae_p * 1.01:
+            informe.append([p, int(len(b)), round(mae_v, 2), round(mae_p, 2)])
+            if mae_v > mae_p * 1.01:
                 print(f"  {p}: la regresión no mejora al promedio de temporada; dejo la proyección anterior")
                 continue
-            beta = entrenar(pd.concat([a, b]))  # para proyectar se usa toda la evidencia
-        pr = pd.Series(np.clip(h[COLS].values @ beta, 0, None), index=h["id"].values)
+            beta = entrenar(pd.concat([a, b]), cols)  # para proyectar se usa toda la evidencia
+        pr = pd.Series(np.clip(h[cols].values @ beta, 0, None), index=h["id"].values)
         pr = pr[pr.index.isin(df.index)]
         df.loc[pr.index, "O"] = pr.values
-        INFORME[p] = dict(zip(COLS, np.round(beta, 3).tolist()))
+        INFORME[p] = dict(zip(cols, np.round(beta, 3).tolist()))
     if informe:
         print("Prueba contra resultados reales 2026 (error medio por partido, pts):")
         for p, n, a1, a2 in informe:
