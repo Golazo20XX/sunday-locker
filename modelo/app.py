@@ -66,7 +66,7 @@ def armar_liga(lg, uid, players, semana):
 
     def nombre_equipo(r):
         u = users.get(r.get('owner_id')) or {}
-        return (u.get('metadata') or {}).get('team_name') or u.get('display_name') or 'Equipo %s' % r['roster_id']
+        return (u.get('metadata') or {}).get('team_name') or ('Team ' + u['display_name'] if u.get('display_name') else 'Equipo %s' % r['roster_id'])
 
     mio = next((r for r in rosters if r.get('owner_id') == uid or uid in (r.get('co_owners') or [])), None)
     if not mio:
