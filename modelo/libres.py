@@ -116,7 +116,7 @@ def radar(ros, nov, valor):
     # 1) titulares lesionados → su mejor suplente sano
     for j, n in nov.items():
         t = ros.get(j)
-        if not t or not _malo(n) or t.get("Pos") not in ("QB", "RB", "WR", "TE"):
+        if not t or not _malo(n) or t.get("Pos") not in ("QB", "RB", "WR", "TE") or t.get("Dueño", "Libre") == "Libre":
             continue
         grupo = sorted([x for x in por_eq.get((t.get("NFL"), t["Pos"]), [])
                         if x["Jugador"] != j and not _malo(nov.get(x["Jugador"]) or {})],
