@@ -49,3 +49,64 @@ if(typeof V!=='undefined'&&typeof V.players==='function'&&hay('dtView')){var _vp
   var se='<select style="width:100%;margin:0 0 10px;padding:10px;border-radius:12px;font-size:14px;font-weight:700" onchange="var o={'+op.map(function(o){return o[0]+":'"+o[1]+"'"}).join(',')+'};S.sub.rk=this.value;S.sub._rk=this.value;S.sub.dts=o[this.value];render()">'+op.map(function(o){return '<option value="'+o[0]+'"'+(o[0]===sel?' selected':'')+'>'+esc(o[2])+'</option>'}).join('')+'</select>';
   return T+se+dtView()}}
 })();
+(function(){if(typeof nflView!=='function'||typeof NF==='undefined')return;
+var st=document.createElement('style');st.textContent='.ng.tapg{cursor:pointer}.ng.tapg:active{opacity:.7}.ng.tapg::after{content:"Ver jugadores ›";display:block;text-align:right;font-size:11px;font-weight:700;color:#0E7A47;margin-top:6px}'+
+'.nfdh{background:#fff;border:1px solid #E6EAF0;border-radius:14px;padding:12px;margin-bottom:12px}.nfdh .tp{display:flex;justify-content:space-between;font-size:11px;color:var(--mu);margin-bottom:8px}.nfdh .tp b{color:var(--tx)}.nfdh .tp b.in{color:#D92D20}'+
+'.nfdh .sb{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}.nfdh .tm{display:flex;flex-direction:column;align-items:center;gap:3px}.nfdh .tm img{width:40px;height:40px;object-fit:contain}.nfdh .tm b{font-size:14px}.nfdh .tm small{font-size:10px;color:var(--mu)}.nfdh .sc{font-size:30px;font-weight:800;text-align:center;white-space:nowrap}.nfdh .sc i{font-style:normal;color:var(--mu);margin:0 8px;font-size:18px}.nfdh .ss{text-align:center;font-size:11px;color:var(--mu);margin-top:6px}.nfdh .ss.rz{color:#D92D20;font-weight:700}'+
+'.nfd{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nfc{background:#fff;border:1px solid #E6EAF0;border-radius:14px;padding:8px;min-width:0}.nfc .hd{display:flex;align-items:center;justify-content:space-between;gap:6px;font-weight:800;font-size:12px;padding:2px 2px 6px;border-bottom:1px solid #EEF1F5}.nfc .hd img{width:20px;height:20px;object-fit:contain}.nfc .hd span{display:flex;align-items:center;gap:5px}.nfc .hd small{font-weight:600;color:var(--mu)}'+
+'.nfp{display:flex;align-items:center;gap:6px;padding:7px 2px;border-top:1px solid #F2F4F7;min-width:0;background:none;border-left:0;border-right:0;border-bottom:0;width:100%;text-align:left;color:var(--tx)}.nfp:first-of-type{border-top:0}.nfp .av{width:26px;height:26px;font-size:9px}.nfp .b{flex:1;min-width:0}.nfp .n{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nfp .s{font-size:9.5px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nfp .s .o{font-weight:700}.nfp .s .o.me{color:#0E7A47}.nfp .s .o.rv{color:#B42318}.nfp .r{text-align:right;flex:none}.nfp .r b{display:block;font-size:14px;font-weight:800}.nfp .r small{font-size:9px;color:var(--mu);white-space:nowrap}.nfp.me{background:#F1FAF5;border-radius:8px}.nfp.rv{background:#FEF3F2;border-radius:8px}.nfpos{font-size:9px;font-weight:800;color:var(--mu);letter-spacing:.5px;padding:8px 2px 2px}'+
+'@media(max-width:380px){.nfp .av{display:none}}';document.head.appendChild(st);
+var D2={},ORD={QB:0,RB:1,WR:2,TE:3,K:4,DST:5};
+function key(s){return String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[.'\u2019,-]/g,'').replace(/\b(jr|sr|ii|iii|iv|v)\b/g,'').replace(/\s+/g,'')}
+function orden(pe){var o={in:0,pre:1,post:2},E=NF.ev.slice().sort(function(a,b){return (o[a.st]-o[b.st])||(a.date-b.date)});
+ if(cur('nff','Todos')==='Con mis jugadores')E=E.filter(function(e){return pe.mine[e.a.t]||pe.mine[e.h.t]||pe.riv[e.a.t]||pe.riv[e.h.t]});return E}
+// puntos fantasy aproximados desde la ficha de ESPN (para libres; los que tienen dueño usan los puntos exactos de Sleeper)
+function ptsEspn(x){var P=(typeof PTS_LIGA!=='undefined'&&PTS_LIGA)||{py:0.04,ptd:6,int:-2,ry:0.1,td:6,rec:0.5,recy:0.1,fum:-2};
+ var v=(x.py||0)*P.py+(x.ptd||0)*P.ptd+(x.int||0)*P.int+(x.ry||0)*P.ry+(x.rtd||0)*P.td+(x.rec||0)*P.rec+(x.recy||0)*P.recy+(x.rectd||0)*P.td+(x.fl||0)*P.fum;
+ if(x.fga!=null){var fgm=x.fgm||0;v+=fgm*3+(x.lg>=40&&fgm?1:0)+(x.lg>=50&&fgm?1:0)+(x.xpm||0)-((x.fga||0)-fgm)-((x.xpa||0)-(x.xpm||0))}
+ return Math.round(v*100)/100}
+function parse(j){var out={};((j.boxscore||{}).players||[]).forEach(function(tp){var t=nfl((tp.team||{}).abbreviation),pl={};
+ (tp.statistics||[]).forEach(function(cat){var ks=cat.keys||[];(cat.athletes||[]).forEach(function(a){var at=a.athlete||{},id=at.id;if(!id)return;var o=pl[id]||(pl[id]={nm:at.displayName||at.shortName||'',pos:((at.position||{}).abbreviation)||''});
+  ks.forEach(function(k,i){var s=String((a.stats||[])[i]||''),v=parseFloat(s)||0,ab=s.split('/');
+   if(cat.name==='passing'){if(k==='passingYards')o.py=v;if(k==='passingTouchdowns')o.ptd=v;if(k==='interceptions')o.int=v;if(!o.pos)o.pos='QB'}
+   if(cat.name==='rushing'){if(k==='rushingYards')o.ry=v;if(k==='rushingTouchdowns')o.rtd=v}
+   if(cat.name==='receiving'){if(k==='receptions')o.rec=v;if(k==='receivingYards')o.recy=v;if(k==='receivingTouchdowns')o.rectd=v}
+   if(cat.name==='fumbles'&&k==='fumblesLost')o.fl=v;
+   if(cat.name==='kicking'){o.pos='K';if(k.indexOf('fieldGoalsMade')===0){o.fgm=+ab[0]||0;o.fga=+ab[1]||0}if(k==='longFieldGoalMade')o.lg=v;if(k.indexOf('extraPointsMade')===0){o.xpm=+ab[0]||0;o.xpa=+ab[1]||0}}})})});
+ out[t]=Object.keys(pl).map(function(id){var o=pl[id];o.pts=ptsEspn(o);return o})});return out}
+function evId(a,h,wk){var k=wk+'|'+a+'|'+h;if(D2['id|'+k])return Promise.resolve(D2['id|'+k]);var season=(typeof LV!=='undefined'&&LV.season)||String(new Date().getFullYear());
+ return jget('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=2&week='+wk+'&dates='+season).then(function(j){(j.events||[]).forEach(function(ev){var c=(ev.competitions||[])[0]||{},t={};(c.competitors||[]).forEach(function(x){t[x.homeAway]=nfl((x.team||{}).abbreviation)});D2['id|'+wk+'|'+t.away+'|'+t.home]=ev.id});return D2['id|'+k]})}
+function load(a,h,force){var k=a+'|'+h,d=D2[k],e=NF.ev.filter(function(x){return x.a.t===a&&x.h.t===h})[0];if(d&&d.busy)return;
+ if(d&&!force&&Date.now()-d.t<((e&&e.st==='in')?25000:300000))return;
+ D2[k]=d=d||{};d.busy=true;evId(a,h,NF.wk||R.semana).then(function(id){if(!id)throw new Error('partido no encontrado');return jget('https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event='+id)})
+ .then(function(j){d.p=parse(j);d.t=Date.now();d.busy=false;d.err='';if(nfOn()&&S.sub.nfg===k){var y=scrollY;render();scrollTo(0,y)}})
+ .catch(function(err){d.busy=false;d.err=err.message;d.t=Date.now();if(nfOn())render()})}
+setInterval(function(){if(document.visibilityState==='visible'&&nfOn()&&S.sub.nfg){var q=S.sub.nfg.split('|');load(q[0],q[1],false);nfLoad(false);if(typeof liveLoad==='function')liveLoad(false)}},20000);
+var pushed=false;window.nfOpen=function(a,h){S.sub.nfg=a+'|'+h;try{history.pushState({v:typeof snap==='function'?snap():null,nf:1},'');pushed=true;if(typeof NV!=='undefined')NV.n++}catch(e){}render();scrollTo(0,0)};
+window.nfBack=function(){if(pushed){pushed=false;history.back()}else{S.sub.nfg='';render()}};
+window.addEventListener('popstate',function(e){if(S.sub.nfg&&!(e.state&&e.state.nf)){S.sub.nfg='';pushed=false;setTimeout(function(){render();scrollTo(0,0)},0)}});
+function detalle(a,h){var e=NF.ev.filter(function(x){return x.a.t===a&&x.h.t===h})[0];if(!e){S.sub.nfg='';return null}
+ load(a,h,false);var d=D2[a+'|'+h]||{},pe=nfPeople(),ix=typeof lvIdx==='function'?lvIdx():{byName:{},dst:{}};
+ var nm={};[ix.byName,pe.pts,(typeof SL!=='undefined'&&SL.own)||{},typeof FOTO!=='undefined'?FOTO:{}].forEach(function(o){for(var x in o){var q=key(x);if(!nm[q])nm[q]=x}});
+ var sl=typeof SL!=='undefined'&&SL.lid===R.liga_id,own=sl&&SL.own||{},rvN=sl&&SL.rvName;
+ var gm=(typeof LV!=='undefined'&&LV.games)||{};
+ var lista=function(t){var L=[],vistos={};
+  ((d.p||{})[t]||[]).forEach(function(x){var m=nm[key(x.nm)]||x.nm,inf=ix.byName[m]||{};vistos[m]=1;L.push({nm:m,pos:(inf.pos||x.pos||'').replace('DEF','DST')||'—',pts:pe.pts[m]!=null?pe.pts[m]:x.pts,ex:pe.pts[m]!=null,proy:inf.proy})});
+  for(var m in ix.byName){var inf=ix.byName[m];if(vistos[m]||nfl(inf.nfl)!==t||!(inf.proy>=3||own[m]))continue;if(inf.pos==='DST'||inf.pos==='DEF')continue;L.push({nm:m,pos:inf.pos||'—',pts:pe.pts[m]!=null?pe.pts[m]:0,ex:pe.pts[m]!=null,proy:inf.proy})}
+  var dn=ix.dst[t]||(t+' DST');if(pe.pts[dn]!=null||own[dn]||(ix.byName[dn]||{}).proy)L.push({nm:dn,pos:'DST',pts:pe.pts[dn]!=null?pe.pts[dn]:null,ex:pe.pts[dn]!=null,proy:(ix.byName[dn]||{}).proy});
+  L=L.filter(function(x){return ORD[x.pos]!=null&&(x.pts||x.proy>=1||own[x.nm])});
+  L.sort(function(x,y){return (ORD[x.pos]-ORD[y.pos])||((y.pts||0)-(x.pts||0))||((y.proy||0)-(x.proy||0))});return L};
+ var rem=e.st==='pre'?1:e.st==='post'?0:((gm[a]||{}).rem!=null?gm[a].rem:0.5);
+ var col=function(t,tm){var L=lista(t),tot=0,last='',body='';L.forEach(function(x){var o=own[x.nm]||'Libre',cls=o===R.equipo?'me':o===rvN?'rv':'';tot+=+x.pts||0;
+   if(x.pos!==last){last=x.pos;body+='<div class="nfpos">'+esc(x.pos)+'</div>'}
+   var live=typeof x.proy==='number'?(x.pos==='DST'?rem*x.proy+(1-rem)*(+x.pts||0):(+x.pts||0)+x.proy*rem):null;
+   body+='<button class="nfp '+cls+'" onclick="openP(\''+esc(x.nm).replace(/'/g,"\\'")+'\')">'+av(x.nm,t,x.pos)+'<div class="b"><div class="n">'+esc(nfShort(x.nm))+'</div><div class="s"><span class="o '+cls+'">'+esc(o===R.equipo?'Mío':o)+'</span>'+(typeof x.proy==='number'?' · Proy '+n(x.proy):'')+'</div></div><div class="r"><b>'+(x.pts==null||e.st==='pre'?'—':n(x.pts))+'</b><small>'+(e.st==='pre'?'':(e.st==='post'?(x.ex?'final':'aprox.'):(live!=null?'→ '+n(live):'')))+'</small></div></button>'});
+  return '<div class="nfc"><div class="hd"><span><img src="'+esc(tm.logo)+'" alt="" onerror="this.remove()">'+esc(tm.ab)+'</span><small>'+(e.st==='pre'?'':n(tot)+' pts')+'</small></div>'+(body||'<div class="empty" style="font-size:11px">'+(d.busy||!d.t?'Cargando…':'Sin jugadores con puntos.')+'</div>')+'</div>'};
+ var hd='<div class="nfdh"><div class="tp"><b class="'+e.st+'">'+esc(e.lab)+'</b><span>'+esc(e.tv)+'</span></div><div class="sb"><div class="tm"><img src="'+esc(e.a.logo)+'" alt="" onerror="this.remove()"><b>'+esc(e.a.ab)+'</b><small>'+esc(e.a.rec)+'</small></div><div class="sc">'+(e.st==='pre'?'vs':esc(e.a.sc)+'<i>–</i>'+esc(e.h.sc))+'</div><div class="tm"><img src="'+esc(e.h.logo)+'" alt="" onerror="this.remove()"><b>'+esc(e.h.ab)+'</b><small>'+esc(e.h.rec)+'</small></div></div>'+(e.st==='in'&&e.dd?'<div class="ss'+(e.rz?' rz':'')+'">'+esc(e.dd)+(e.rz?' · zona roja':'')+'</div>':'')+'</div>';
+ var err=d.err&&!d.p?'<div class="note y">No se pudo leer el detalle de ESPN: '+esc(d.err)+' <button class="btn sec" onclick="NF_D_retry()">Reintentar</button></div>':'';
+ return '<button class="pmbk" onclick="nfBack()">'+(typeof svg==='function'?svg('back',2):'‹')+'Partidos NFL</button>'+hd+err+'<div class="nfd">'+col(a,e.a)+col(h,e.h)+'</div><div class="dtn">Puntos fantasy de tu liga en vivo. <b>Verde</b> = tuyos, <b>rojo</b> = de tu rival; abajo de cada uno, su dueño y la proyección del modelo. "→" = proyección en vivo (puntos + lo que falta). Los libres muestran puntos aproximados a partir de la ficha de ESPN. Se actualiza solo cada ~20 s.</div>'}
+window.NF_D_retry=function(){var q=String(S.sub.nfg||'').split('|');if(q[1])load(q[0],q[1],true)};
+var _v=nflView;window.nflView=function(){var g=String(S.sub.nfg||'');if(g){var q=g.split('|'),x=detalle(q[0],q[1]);if(x!=null)return x}
+ var h=_v.apply(this,arguments);if(!NF.ev||!NF.ev.length)return h;var E=orden(nfPeople()),i=0;
+ return h.replace(/<div class="ng( in)?"><div class="ngt">/g,function(m0,inn){var e=E[i++];if(!e)return m0;return '<div class="ng'+(inn||'')+' tapg" onclick="nfOpen(\''+e.a.t+'\',\''+e.h.t+'\')"><div class="ngt">'})}
+})();
