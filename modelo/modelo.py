@@ -538,7 +538,7 @@ def main():
     cal = calendario(games, TEMPORADA)
     fac = factores_rival(pg26, pg25)
     les = estado_lesiones(slp, espn, cal, semana)
-    df, proy, det = proyectar(df, cal, fac, les, semana, ahora); import mezcla; proy = mezcla.aplicar(df, proy, semana, cal, ahora, sl_a_gsis, PTS, TEMPORADA); import clima; proy0 = proy; proy, AJ = clima.aplicar(df, proy, games, cal, semana, slp); clima.guardar(df, proy0, proy, semana, cal, ahora); clima.medir(pg26)
+    df, proy, det = proyectar(df, cal, fac, les, semana, ahora); import mezcla; proy = mezcla.aplicar(df, proy, semana, cal, ahora, sl_a_gsis, PTS, TEMPORADA); import kdst; proy = kdst.aplicar(df, proy, semana, cal, ahora, pg26); import clima; proy0 = proy; proy, AJ = clima.aplicar(df, proy, games, cal, semana, slp); clima.guardar(df, proy0, proy, semana, cal, ahora); clima.medir(pg26)
 
     # Puntos ROS: semanas restantes (la actual solo si su partido no empezó)
     inicio = cal.set_index(["nfl", "week"])["inicio"]
