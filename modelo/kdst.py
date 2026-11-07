@@ -52,7 +52,7 @@ def _historial(pg):
         return pd.DataFrame()
     archivos = sorted(os.listdir(CARPETA), key=lambda f: (0 if f.startswith("kdst_") else 1, f))
     for f in archivos:
-        mm = re.match(r"(?:kdst_s|proy_\d+_s)(\d+)\.csv$", f)
+        mm = re.match(r"(?:kdst_s|proy_\d+_s|puro_\d+_s)(\d+)\.csv$", f)
         if not mm:
             continue
         w = int(mm.group(1))
@@ -95,6 +95,7 @@ def aplicar(df, proy, semana, cal, ahora, pg):
             print("K/DST: todavía no hay semanas jugadas para calibrar")
             return proy
         h = h[h["Base"] >= MIN_PROY]
+        print(f"K/DST: semanas con proyección guardada y resultado real: {sorted(h['Semana'].unique().tolist())}")
         proy = proy.copy()
         res = {}
         for pos in POSICIONES:
