@@ -82,10 +82,14 @@ def _malo(n):
 def _trending():
     """{clave del nombre: altas en Sleeper en las últimas RADAR_HORAS}, una sola vez por corrida."""
     if "t" not in _RADAR:
-        _RADAR["t"] = {}
+        _RADAR["t"], _RADAR["pl"] = {}, {}
         try:
             tr = sm.json_url("sl_trending", URL_TREND.format(h=RADAR_HORAS)) or []
             pl = sm.json_url("sl_players_nfl", URL_PLAYERS) or {}
+            for p in pl.values():
+                nm = p.get("full_name")
+                if nm and p.get("position") in ("QB", "RB", "WR", "TE"):
+                    _RADAR["pl"][_clave(nm)] = (p.get("depth_chart_order"), p.get("search_rank") or 99999)
             for x in tr:
                 p = pl.get(str(x.get("player_id"))) or {}
                 nm = p.get("full_name") or f"{p.get('first_name', '')} {p.get('last_name', '')}".strip()
@@ -124,6 +128,10 @@ def radar(ros, nov, valor):
         if not grupo or num(grupo[0].get("ROS por semana")) < RADAR_MIN_ROS:
             continue
         s = grupo[0]
+        dj = _RADAR.get("pl", {}).get(_clave(j), (None, 99999))
+        ds = _RADAR.get("pl", {}).get(_clave(s["Jugador"]), (None, 99999))
+        if ds[0] == 1 and ds[1] < dj[1]:
+            continue  # el "suplente" ya es el titular y el lesionado era su suplente (ej. Herbert / Lance)
         est = n.get("Estado") or "fuera"
         alt = tr.get(_clave(s["Jugador"]), 0)
         fila(s, "Lesiones (modelo)" + (f" + Sleeper ({alt} altas)" if alt else ""),
