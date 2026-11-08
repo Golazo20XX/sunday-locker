@@ -111,3 +111,4 @@ var _v=nflView;window.nflView=function(){var g=String(S.sub.nfg||'');if(g){var q
  return h.replace(/<div class="ng( in)?"><div class="ngt">/g,function(m0,inn){var e=E[i++];if(!e)return m0;return '<div class="ng'+(inn||'')+' tapg" onclick="nfOpen(\''+e.a.t+'\',\''+e.h.t+'\')"><div class="ngt">'})}
 })();
 (function(){if(typeof toast!=='function')return;var _t=toast;window.toast=function(m){if(/^Proyecciones del modelo propio/.test(String(m||'')))return;return _t.apply(this,arguments)}})();
+(function(){if(typeof liveLoad!=='function')return;var _l=liveLoad;window.liveLoad=function(f){try{if(typeof LV!=='undefined'&&R&&R.liga_id&&LV.lid!==R.liga_id)f=true}catch(e){}return _l.call(this,f)};if(typeof setLiga==='function'){var _s=setLiga;window.setLiga=function(){var r=_s.apply(this,arguments);try{liveLoad(true)}catch(e){}return r}}})();
