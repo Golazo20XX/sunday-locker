@@ -110,3 +110,4 @@ var _v=nflView;window.nflView=function(){var g=String(S.sub.nfg||'');if(g){var q
  var h=_v.apply(this,arguments);if(!NF.ev||!NF.ev.length)return h;var E=orden(nfPeople()),i=0;
  return h.replace(/<div class="ng( in)?"><div class="ngt">/g,function(m0,inn){var e=E[i++];if(!e)return m0;return '<div class="ng'+(inn||'')+' tapg" onclick="nfOpen(\''+e.a.t+'\',\''+e.h.t+'\')"><div class="ngt">'})}
 })();
+(function(){if(typeof toast!=='function')return;var _t=toast;window.toast=function(m){if(/^Proyecciones del modelo propio/.test(String(m||'')))return;return _t.apply(this,arguments)}})();
