@@ -79,29 +79,25 @@ function init(){if(document.getElementById('cbtn'))return;
  document.getElementById('cq').addEventListener('keydown',function(e){if(e.key==='Escape')cerrar(false)})}
 function visible(el){if(!el)return false;var s=getComputedStyle(el);return s.display!=='none'&&s.visibility!=='hidden'&&+s.opacity>0.05}
 var T0=Date.now();
+function iconosArriba(b){var out=[];
+ [].forEach.call(document.querySelectorAll('svg'),function(s){if(b.contains(s)||s.closest('#cpn')||!visible(s))return;
+  var q=s.getBoundingClientRect();if(q.width<12||q.width>44||q.height<12||q.top<0||q.top>110)return;
+  var el=document.elementFromPoint(q.left+q.width/2,q.top+q.height/2);if(!el||!(s===el||s.contains(el)||(el.contains&&el.contains(s))))return;
+  if(!out.some(function(o){return Math.abs(o.r.left-q.left)<6}))out.push({s:s,r:q})});
+ return out.sort(function(x,y){return y.r.right-x.r.right})}
 function ponerBtn(){var b=document.getElementById('cbtn')||window.__cbtn;if(!b)return;window.__cbtn=b;
  if(b.parentNode!==document.body)document.body.appendChild(b);
- var bell=document.getElementById('bdg'),hb=bell&&bell.closest('button'),sv=hb&&hb.querySelector('svg'),r=sv&&sv.getBoundingClientRect();
- var pronto=Date.now()-T0<3500,sp=document.getElementById('splash');
- if(pronto&&sp&&visible(sp)&&!sp.classList.contains('hide')){b.classList.remove('ok');return}
- if(!r||!r.width||r.bottom<=0||r.top>window.innerHeight){
-  b.style.zIndex='2147483000';b.style.top='calc(12px + env(safe-area-inset-top))';b.style.left='auto';b.style.right='64px';
-  b.style.width='26px';b.style.height='26px';b.style.color='#F4F5F7';b.classList.add('ok');return}
- // Medidas del dibujo de la campana (no del botón) y del ícono que está a su derecha
- var gap=null,best=1e9;
- [].forEach.call(document.querySelectorAll('header svg, #hdr svg, .hdr svg, svg'),function(s){if(s===sv||hb.contains(s)||b.contains(s)||!visible(s))return;
-  var q=s.getBoundingClientRect();if(!q.width||q.width>60)return;
-  var mid=q.top+q.height/2;if(Math.abs(mid-(r.top+r.height/2))>r.height)return;
-  var d=q.left-r.right;if(d>=0&&d<best){best=d;gap=d}});
- if(gap===null||gap>80)gap=Math.round(r.width*0.8);
- var z=0,e;for(e=hb;e&&e!==document.body;e=e.parentElement){var zz=parseInt(getComputedStyle(e).zIndex,10);if(!isNaN(zz))z=Math.max(z,zz)}
- b.style.zIndex=String(Math.max(z+1,12));
- var ss=getComputedStyle(sv),bs=b.querySelector('svg');
- b.style.color=getComputedStyle(hb).color;b.style.width=r.width+'px';b.style.height=r.height+'px';
+ var sp=document.getElementById('splash');
+ if(Date.now()-T0<3500&&sp&&visible(sp)&&!sp.classList.contains('hide')){b.classList.remove('ok');return}
+ var was=b.classList.contains('ok');b.classList.remove('ok'); // no medirse a sí mismo
+ var ic=iconosArriba(b),der=ic[0],bel=ic[1];
+ if(!der||!bel||der.r.left<window.innerWidth/2){b.style.zIndex='2147483000';b.style.top='calc(12px + env(safe-area-inset-top))';
+  b.style.left='auto';b.style.right='120px';b.style.width='24px';b.style.height='24px';b.style.color='#F4F5F7';b.classList.add('ok');return}
+ var r=bel.r,gap=Math.max(6,der.r.left-r.right),ss=getComputedStyle(bel.s),bs=b.querySelector('svg');
+ b.style.zIndex='2147483000';b.style.color=ss.color||'#F4F5F7';b.style.width=r.width+'px';b.style.height=r.height+'px';
  if(bs){bs.setAttribute('width',r.width);bs.setAttribute('height',r.height);
-  var sw=sv.getAttribute('stroke-width')||ss.strokeWidth;if(sw)bs.setAttribute('stroke-width',parseFloat(sw)||2)}
- b.style.right='auto';b.style.top=Math.round(r.top)+'px';b.style.left=Math.max(4,Math.round(r.left-gap-r.width))+'px';b.classList.add('ok')}
-function arreglarAviso(){var m=document.getElementById('m');if(!m)return;
+  var sw=bel.s.getAttribute('stroke-width')||ss.strokeWidth;if(sw)bs.setAttribute('stroke-width',parseFloat(sw)||2)}
+ b.style.right='auto';b.style.top=Math.round(r.top)+'px';b.style.left=Math.max(4,Math.round(r.left-gap-r.width))+'px';b.classList.add('ok')}function arreglarAviso(){var m=document.getElementById('m');if(!m)return;
  [].forEach.call(m.querySelectorAll('div'),function(d){var t=d.textContent||'';if(t.indexOf('ActualizarTodo')<0)return;
   if([].some.call(d.querySelectorAll('div'),function(x){return (x.textContent||'').indexOf('ActualizarTodo')>=0}))return;
   var n=t.match(/semana\s+(\d+)[^\d]+?(\d+)/),sl=n?+n[1]:0,mo=n?+n[2]:0;
