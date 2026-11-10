@@ -28,7 +28,10 @@ _EXTRA = {}
 
 
 def _Phi(x):
-    return 0.5 * (1 + np.vectorize(math.erf)(x / math.sqrt(2)))
+    x = np.asarray(x, dtype=float)
+    if x.size == 0:
+        return x
+    return 0.5 * (1 + np.vectorize(math.erf, otypes=[float])(x / math.sqrt(2)))
 
 
 def incertidumbre(pg25):
@@ -82,6 +85,8 @@ def ausencias(pg25):
 def _opcion(mu, r, sig):
     out = pd.Series(0.0, index=mu.index)
     ok = (mu > 0.05) & (r > 0.05)
+    if not ok.any():
+        return out
     d1 = (np.log(mu[ok] / r[ok]) + sig[ok] ** 2 / 2) / sig[ok]
     out[ok] = mu[ok] * _Phi(d1) - r[ok] * _Phi(d1 - sig[ok])
     return out
