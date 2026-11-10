@@ -8,8 +8,8 @@ var TABLAS=[['App_Resumen',60],['App_Alineacion',20],['App_Rival',12],['App_Rost
  ['App_RankSemana',60],['App_RankROS',60]];
 var MAX=60000,H=[],ocupado=false;
 var st=document.createElement('style');st.textContent=
-'#cbtn{background:none;border:0;color:inherit;font-size:20px;line-height:1;padding:6px;cursor:pointer;display:inline-block!important;visibility:visible!important;opacity:1!important}'+
-'#cbtn.flot{position:fixed!important;top:calc(10px + env(safe-area-inset-top));right:64px;z-index:2147483000!important;background:#252D3A;border-radius:18px;padding:6px 9px}'+
+'#cbtn{position:fixed!important;z-index:2147483000!important;top:calc(12px + env(safe-area-inset-top));right:112px;background:#252D3A;color:#fff;border:0;border-radius:18px;font-size:18px;line-height:1;padding:6px 9px;cursor:pointer;display:block!important;opacity:1!important;box-shadow:0 2px 8px rgba(0,0,0,.35)}'+
+'body.coach-on #cbtn{display:none!important}'+
 '#cpn{position:fixed!important;left:0;right:0;top:0;height:100vh;height:100dvh;z-index:2147483600!important;background:#0A0D13;color:#F4F5F7;display:none!important;flex-direction:column;font-family:Inter,system-ui}'+
 '#cpn.on{display:flex!important}body.coach-on{overflow:hidden}'+
 '#cpn .ch{flex:none;display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 14px 12px;border-bottom:1px solid #2E3746}'+
@@ -60,7 +60,7 @@ function init(){if(document.getElementById('cbtn'))return;
  var b=document.createElement('button');b.id='cbtn';b.type='button';b.title='Coach Intel';b.setAttribute('aria-label','Coach Intel');b.textContent='💬';
  document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('#cbtn');if(t){e.preventDefault();e.stopPropagation();abrir()}},true);
  ['touchstart','touchend','mousedown','pointerdown'].forEach(function(ev){b.addEventListener(ev,function(e){e.stopPropagation()},false)});
- window.__cbtn=b;document.body.appendChild(b);ponerBtn();
+ window.__cbtn=b;document.body.appendChild(b);ponerBtn();arreglarAviso();
  var p=document.createElement('div');p.id='cpn';
  p.innerHTML='<div class="ch"><button type="button" class="cx">‹ Volver</button><b>Coach Intel</b></div><div id="cms"></div>'+
   '<div id="csg">'+SUG.map(function(s){return '<button type="button" class="cs">'+esc(s)+'</button>'}).join('')+'</div>'+
@@ -73,12 +73,18 @@ function init(){if(document.getElementById('cbtn'))return;
  document.getElementById('cq').onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();enviar(leer())}};
  document.addEventListener('keydown',function(e){if(e.key==='Escape')cerrar(false)});
  document.getElementById('cq').addEventListener('keydown',function(e){if(e.key==='Escape')cerrar(false)})}
-var T0=Date.now();
 function ponerBtn(){var b=document.getElementById('cbtn')||window.__cbtn;if(!b)return;window.__cbtn=b;
- var bell=document.getElementById('bdg'),hb=bell&&bell.closest('button');
- if(hb&&hb.parentNode){if(b.nextSibling!==hb)hb.parentNode.insertBefore(b,hb);b.classList.remove('flot');b.style.visibility=''}
- else if(Date.now()-T0>4000){b.classList.add('flot');b.style.visibility='';if(!document.body.contains(b))document.body.appendChild(b)}
- else{b.style.visibility='hidden'}}
-setInterval(ponerBtn,300);
+ if(b.parentNode!==document.body)document.body.appendChild(b);
+ var bell=document.getElementById('bdg'),hb=bell&&bell.closest('button'),r=hb&&hb.getBoundingClientRect();
+ if(r&&r.width){var bw=b.offsetWidth||38,bh=b.offsetHeight||30;
+  b.style.top=Math.round(r.top+(r.height-bh)/2)+'px';b.style.left=Math.max(4,Math.round(r.left-bw-8))+'px';b.style.right='auto'}
+ else{b.style.left='';b.style.right='';b.style.top=''}}
+function arreglarAviso(){if(typeof ligaBar!=='function'||ligaBar.__coach)return;var orig=ligaBar;
+ ligaBar=function(){var h=orig.apply(this,arguments);if(typeof h!=='string')return h;
+  var adelante=typeof SL!=='undefined'&&typeof R!=='undefined'&&SL&&R&&+SL.wk>+R.semana;
+  h=h.replace(/<div class="note y"[^>]*>(?:(?!<\/div>)[\s\S])*?ActualizarTodo(?:(?!<\/div>)[\s\S])*?<\/div>/g,function(){return adelante?'<div class="note y" style="margin:-4px 0 10px">⚠ Sleeper ya está en la semana '+esc(SL.wk)+' y el modelo todavía en la '+esc(R.semana)+'. Se actualiza solo en unas horas.</div>':''});
+  return h.replace(/del Excel/g,'del modelo')};
+ ligaBar.__coach=true;try{if(typeof render==='function')render()}catch(e){}}
+setInterval(ponerBtn,300);window.addEventListener('scroll',ponerBtn,{passive:true});window.addEventListener('resize',ponerBtn);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
