@@ -8,7 +8,8 @@ var TABLAS=[['App_Resumen',60],['App_Alineacion',20],['App_Rival',12],['App_Rost
  ['App_RankSemana',60],['App_RankROS',60]];
 var MAX=60000,H=[],ocupado=false;
 var st=document.createElement('style');st.textContent=
-'#cbtn{position:fixed!important;z-index:2147483000!important;top:calc(12px + env(safe-area-inset-top));right:112px;background:#252D3A;color:#fff;border:0;border-radius:18px;font-size:18px;line-height:1;padding:6px 9px;cursor:pointer;display:block!important;opacity:1!important;box-shadow:0 2px 8px rgba(0,0,0,.35)}'+
+'#cbtn{position:fixed!important;z-index:11;display:none;align-items:center;justify-content:center;background:none!important;border:0!important;box-shadow:none!important;padding:0;margin:0;cursor:pointer;color:inherit;-webkit-tap-highlight-color:transparent}'+
+'#cbtn.ok{display:flex}#cbtn svg{display:block;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}'+
 'body.coach-on #cbtn{display:none!important}'+
 '#cpn{position:fixed!important;left:0;right:0;top:0;height:100vh;height:100dvh;z-index:2147483600!important;background:#0A0D13;color:#F4F5F7;display:none!important;flex-direction:column;font-family:Inter,system-ui}'+
 '#cpn.on{display:flex!important}body.coach-on{overflow:hidden}'+
@@ -57,10 +58,13 @@ function abrir(){var p=document.getElementById('cpn');if(abierto())return;p.clas
 function cerrar(deHist){if(!abierto())return;document.getElementById('cpn').classList.remove('on');document.body.classList.remove('coach-on');
 }
 function init(){if(document.getElementById('cbtn'))return;
- var b=document.createElement('button');b.id='cbtn';b.type='button';b.title='Coach Intel';b.setAttribute('aria-label','Coach Intel');b.textContent='💬';
+ var b=document.createElement('button');b.id='cbtn';b.type='button';b.title='Coach Intel';b.setAttribute('aria-label','Coach Intel');
+ b.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" stroke-width="2"><path d="M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4 19.5l1.3-4.6A7.5 7.5 0 1 1 20 11.5z"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01" stroke-width="2.6"/></svg>';
  document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('#cbtn');if(t){e.preventDefault();e.stopPropagation();abrir()}},true);
  ['touchstart','touchend','mousedown','pointerdown'].forEach(function(ev){b.addEventListener(ev,function(e){e.stopPropagation()},false)});
+ var bell=document.getElementById('bdg'),hb=bell&&bell.closest('button');
  window.__cbtn=b;document.body.appendChild(b);ponerBtn();arreglarAviso();
+ try{new MutationObserver(function(){arreglarAviso();ponerBtn()}).observe(document.getElementById('m')||document.body,{childList:true,subtree:true})}catch(e){}
  var p=document.createElement('div');p.id='cpn';
  p.innerHTML='<div class="ch"><button type="button" class="cx">‹ Volver</button><b>Coach Intel</b></div><div id="cms"></div>'+
   '<div id="csg">'+SUG.map(function(s){return '<button type="button" class="cs">'+esc(s)+'</button>'}).join('')+'</div>'+
@@ -73,18 +77,28 @@ function init(){if(document.getElementById('cbtn'))return;
  document.getElementById('cq').onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();enviar(leer())}};
  document.addEventListener('keydown',function(e){if(e.key==='Escape')cerrar(false)});
  document.getElementById('cq').addEventListener('keydown',function(e){if(e.key==='Escape')cerrar(false)})}
+function visible(el){if(!el)return false;var s=getComputedStyle(el);return s.display!=='none'&&s.visibility!=='hidden'&&+s.opacity>0.05}
 function ponerBtn(){var b=document.getElementById('cbtn')||window.__cbtn;if(!b)return;window.__cbtn=b;
  if(b.parentNode!==document.body)document.body.appendChild(b);
  var bell=document.getElementById('bdg'),hb=bell&&bell.closest('button'),r=hb&&hb.getBoundingClientRect();
- if(r&&r.width){var bw=b.offsetWidth||38,bh=b.offsetHeight||30;
-  b.style.top=Math.round(r.top+(r.height-bh)/2)+'px';b.style.left=Math.max(4,Math.round(r.left-bw-8))+'px';b.style.right='auto'}
- else{b.style.left='';b.style.right='';b.style.top=''}}
-function arreglarAviso(){if(typeof ligaBar!=='function'||ligaBar.__coach)return;var orig=ligaBar;
- ligaBar=function(){var h=orig.apply(this,arguments);if(typeof h!=='string')return h;
-  var adelante=typeof SL!=='undefined'&&typeof R!=='undefined'&&SL&&R&&+SL.wk>+R.semana;
-  h=h.replace(/<div class="note y"[^>]*>(?:(?!<\/div>)[\s\S])*?ActualizarTodo(?:(?!<\/div>)[\s\S])*?<\/div>/g,function(){return adelante?'<div class="note y" style="margin:-4px 0 10px">⚠ Sleeper ya está en la semana '+esc(SL.wk)+' y el modelo todavía en la '+esc(R.semana)+'. Se actualiza solo en unas horas.</div>':''});
-  return h.replace(/del Excel/g,'del modelo')};
- ligaBar.__coach=true;try{if(typeof render==='function')render()}catch(e){}}
-setInterval(ponerBtn,300);window.addEventListener('scroll',ponerBtn,{passive:true});window.addEventListener('resize',ponerBtn);
+ var sp=document.getElementById('splash'),tapa=(sp&&visible(sp)&&!sp.classList.contains('hide'))||!r||!r.width||r.bottom<=0;
+ if(tapa){b.classList.remove('ok');return}
+ var cs=getComputedStyle(hb),sv=hb.querySelector('svg'),ss=sv&&getComputedStyle(sv),bs=b.querySelector('svg');
+ b.style.color=cs.color;b.style.width=r.width+'px';b.style.height=r.height+'px';
+ if(ss&&bs){bs.setAttribute('width',parseFloat(ss.width)||22);bs.setAttribute('height',parseFloat(ss.height)||22);
+  var sw=sv.getAttribute('stroke-width')||ss.strokeWidth;if(sw)bs.setAttribute('stroke-width',parseFloat(sw)||2)}
+ var gap=8,sig=hb.nextElementSibling,ant=hb.previousElementSibling;
+ if(sig&&visible(sig)){var r2=sig.getBoundingClientRect();if(r2.width&&r2.left>=r.right)gap=r2.left-r.right}
+ else if(ant&&visible(ant)&&ant!==b){var r0=ant.getBoundingClientRect();if(r0.width&&r.left>=r0.right)gap=Math.min(gap,r.left-r0.right)}
+ b.style.top=Math.round(r.top)+'px';b.style.left=Math.max(4,Math.round(r.left-gap-r.width))+'px';b.classList.add('ok')}
+function arreglarAviso(){var m=document.getElementById('m');if(!m)return;
+ [].forEach.call(m.querySelectorAll('div'),function(d){var t=d.textContent||'';if(t.indexOf('ActualizarTodo')<0)return;
+  if([].some.call(d.querySelectorAll('div'),function(x){return (x.textContent||'').indexOf('ActualizarTodo')>=0}))return;
+  var n=t.match(/semana\s+(\d+)[^\d]+?(\d+)/),sl=n?+n[1]:0,mo=n?+n[2]:0;
+  if(sl>mo){var tx=d.querySelector('span')||d;tx.textContent='Sleeper ya está en la semana '+sl+' y el modelo todavía en la '+mo+'. Se actualiza solo en unas horas.'}
+  else d.remove()});
+ var w=document.createTreeWalker(m,NodeFilter.SHOW_TEXT,null,false),x;
+ while((x=w.nextNode()))if(x.nodeValue.indexOf('del Excel')>=0)x.nodeValue=x.nodeValue.replace(/del Excel/g,'del modelo')}
+setInterval(function(){ponerBtn();arreglarAviso()},300);window.addEventListener('scroll',ponerBtn,{passive:true});window.addEventListener('resize',ponerBtn);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
