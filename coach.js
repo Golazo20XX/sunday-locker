@@ -8,7 +8,8 @@ var TABLAS=[['App_Resumen',60],['App_Alineacion',20],['App_Rival',12],['App_Rost
  ['App_RankSemana',60],['App_RankROS',60]];
 var MAX=60000,H=[],ocupado=false;
 var st=document.createElement('style');st.textContent=
-'#cbtn{background:none;border:0;color:inherit;font-size:20px;line-height:1;padding:6px;cursor:pointer}'+
+'#cbtn{background:none;border:0;color:inherit;font-size:20px;line-height:1;padding:6px;cursor:pointer;display:inline-block!important;visibility:visible!important;opacity:1!important}'+
+'#cbtn.flot{position:fixed!important;top:calc(10px + env(safe-area-inset-top));right:64px;z-index:2147483000!important;background:#252D3A;border-radius:18px;padding:6px 9px}'+
 '#cpn{position:fixed!important;left:0;right:0;top:0;height:100vh;height:100dvh;z-index:2147483600!important;background:#0A0D13;color:#F4F5F7;display:none!important;flex-direction:column;font-family:Inter,system-ui}'+
 '#cpn.on{display:flex!important}body.coach-on{overflow:hidden}'+
 '#cpn .ch{flex:none;display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 14px 12px;border-bottom:1px solid #2E3746}'+
@@ -57,10 +58,10 @@ function abrir(){var p=document.getElementById('cpn');if(abierto())return;p.clas
 function cerrar(deHist){if(!abierto())return;document.getElementById('cpn').classList.remove('on');document.body.classList.remove('coach-on');
  if(!deHist){try{if(history.state&&history.state.coach)history.back()}catch(e){}}}
 function init(){if(document.getElementById('cbtn'))return;
- var b=document.createElement('button');b.id='cbtn';b.type='button';b.title='Coach Intel';b.setAttribute('aria-label','Coach Intel');b.textContent='💬';b.onclick=abrir;
+ var b=document.createElement('button');b.id='cbtn';b.type='button';b.title='Coach Intel';b.setAttribute('aria-label','Coach Intel');b.textContent='💬';
+ document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('#cbtn');if(t){e.preventDefault();e.stopPropagation();abrir()}},true);
  ['touchstart','touchend','mousedown','pointerdown'].forEach(function(ev){b.addEventListener(ev,function(e){e.stopPropagation()},false)});
- var bell=document.getElementById('bdg'),hb=bell&&bell.closest('button');
- if(hb&&hb.parentNode)hb.parentNode.insertBefore(b,hb);else{var hd=document.querySelector('header');if(hd)hd.appendChild(b);else{b.style.cssText='position:fixed;top:10px;right:60px;z-index:20';document.body.appendChild(b)}}
+ window.__cbtn=b;document.body.appendChild(b);ponerBtn();
  var p=document.createElement('div');p.id='cpn';
  p.innerHTML='<div class="ch"><button type="button" class="cx">‹ Volver</button><b>Coach Intel</b></div><div id="cms"></div>'+
   '<div id="csg">'+SUG.map(function(s){return '<button type="button" class="cs">'+esc(s)+'</button>'}).join('')+'</div>'+
@@ -74,6 +75,10 @@ function init(){if(document.getElementById('cbtn'))return;
  window.addEventListener('popstate',function(){cerrar(true)});
  document.addEventListener('keydown',function(e){if(e.key==='Escape')cerrar(false)});
  document.getElementById('cq').addEventListener('keydown',function(e){if(e.key==='Escape')cerrar(false)})}
-setInterval(function(){var b=document.getElementById('cbtn'),bell=document.getElementById('bdg'),hb=bell&&bell.closest('button');if(b&&hb&&b.nextSibling!==hb&&hb.parentNode)hb.parentNode.insertBefore(b,hb)},1500);
+function ponerBtn(){var b=document.getElementById('cbtn')||window.__cbtn;if(!b)return;window.__cbtn=b;
+ var bell=document.getElementById('bdg'),hb=bell&&bell.closest('button');
+ if(hb&&hb.parentNode){if(b.nextSibling!==hb)hb.parentNode.insertBefore(b,hb);b.classList.remove('flot')}
+ else{b.classList.add('flot');if(!document.body.contains(b))document.body.appendChild(b)}}
+setInterval(ponerBtn,1000);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
