@@ -81,8 +81,11 @@ function visible(el){if(!el)return false;var s=getComputedStyle(el);return s.dis
 function ponerBtn(){var b=document.getElementById('cbtn')||window.__cbtn;if(!b)return;window.__cbtn=b;
  if(b.parentNode!==document.body)document.body.appendChild(b);
  var bell=document.getElementById('bdg'),hb=bell&&bell.closest('button'),r=hb&&hb.getBoundingClientRect();
- var sp=document.getElementById('splash'),tapa=(sp&&visible(sp)&&!sp.classList.contains('hide'))||!r||!r.width||r.bottom<=0;
- if(tapa){b.classList.remove('ok');return}
+ if(!r||!r.width||r.bottom<=0){b.classList.remove('ok');return}
+ var el=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+ if(!el||!(el===hb||hb.contains(el))){b.classList.remove('ok');return} // algo tapa la campana (pantalla de carga, menú)
+ var z=0,e;for(e=hb;e&&e!==document.body;e=e.parentElement){var zz=parseInt(getComputedStyle(e).zIndex,10);if(!isNaN(zz))z=Math.max(z,zz)}
+ b.style.zIndex=String(z+1);
  var cs=getComputedStyle(hb),sv=hb.querySelector('svg'),ss=sv&&getComputedStyle(sv),bs=b.querySelector('svg');
  b.style.color=cs.color;b.style.width=r.width+'px';b.style.height=r.height+'px';
  if(ss&&bs){bs.setAttribute('width',parseFloat(ss.width)||22);bs.setAttribute('height',parseFloat(ss.height)||22);
