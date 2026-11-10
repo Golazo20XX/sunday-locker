@@ -11,6 +11,7 @@ var st=document.createElement('style');st.textContent=
 '#cbtn{position:fixed!important;display:none;align-items:center;justify-content:center;background:none!important;border:0!important;box-shadow:none!important;padding:0!important;margin:0!important;cursor:pointer;color:inherit;-webkit-tap-highlight-color:transparent}'+
 '#cbtn.ok{display:flex}#cbtn svg{display:block;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}'+
 'body.coach-on #cbtn{display:none!important}'+
+'#cbtn .cdot{display:none;position:absolute;top:-3px;right:-4px;width:9px;height:9px;border-radius:50%;background:#C8F36A;box-shadow:0 0 0 2px #0A0D13}#cbtn.nuevo .cdot{display:block}'+ 
 '#cpn{position:fixed!important;left:0;right:0;top:0;height:100vh;height:100dvh;z-index:2147483600!important;background:#0A0D13;color:#F4F5F7;display:none!important;flex-direction:column;font-family:Inter,system-ui}'+
 '#cpn.on{display:flex!important}body.coach-on{overflow:hidden}'+
 '#cpn .ch{flex:none;display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 14px 12px;border-bottom:1px solid #2E3746}'+
@@ -51,15 +52,17 @@ function enviar(q){q=(q||'').trim();if(!q||ocupado)return;
  .catch(function(e){w.className='cm e';w.textContent='No pude responder: '+e.message})
  .then(function(){ocupado=false;var m=document.getElementById('cms');m.scrollTop=m.scrollHeight})}
 var SUG=['¿Qué alineación pongo esta semana?','¿Qué waiver pido y cuánto ofrezco?','¿Cómo voy contra mi rival?','¿A quién debería vender?','¿Qué DST hago streaming?'];
+function marca(){return (typeof D!=='undefined'&&D&&D.actualizado?D.actualizado:'')+'|'+(typeof LIGA!=='undefined'?LIGA:'')}
+function punto(){var b=document.getElementById('cbtn');if(!b)return;var m=marca();var v=null;try{v=localStorage.getItem('coach_visto')}catch(e){}b.classList.toggle('nuevo',!!m&&m!=='|'&&v!==m)}
 function abierto(){return document.getElementById('cpn').classList.contains('on')}
-function abrir(){var p=document.getElementById('cpn');if(abierto())return;p.classList.add('on');document.body.classList.add('coach-on');
+function abrir(){var p=document.getElementById('cpn');if(abierto())return;try{localStorage.setItem('coach_visto',marca())}catch(e){}punto();p.classList.add('on');document.body.classList.add('coach-on');
  setTimeout(function(){try{document.getElementById('cq').focus()}catch(e){}},80);
  if(!document.getElementById('cms').children.length)add('Hola, soy Coach Intel. Escribe tu pregunta abajo o toca una sugerida. Respondo con los datos del modelo de esta liga.','a')}
 function cerrar(deHist){if(!abierto())return;document.getElementById('cpn').classList.remove('on');document.body.classList.remove('coach-on');
 }
 function init(){if(document.getElementById('cbtn'))return;
  var b=document.createElement('button');b.id='cbtn';b.type='button';b.title='Coach Intel';b.setAttribute('aria-label','Coach Intel');
- b.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" stroke-width="2"><path d="M20 11.5a7.5 7.5 0 0 1-10.9 6.7L4 19.5l1.3-4.6A7.5 7.5 0 1 1 20 11.5z"/><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01" stroke-width="2.6"/></svg>';
+ b.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" stroke-width="2"><path d="M12 4.2C10.9 2.9 8.6 2.8 7.4 4 5.6 3.9 4.2 5.4 4.4 7.1 2.9 7.9 2.4 9.9 3.4 11.2 2.5 12.6 2.9 14.6 4.4 15.3 4.3 17.1 5.8 18.6 7.6 18.4 8.6 19.9 10.8 20.2 12 19"/><path d="M12 4.2C13.1 2.9 15.4 2.8 16.6 4 18.4 3.9 19.8 5.4 19.6 7.1 21.1 7.9 21.6 9.9 20.6 11.2 21.5 12.6 21.1 14.6 19.6 15.3 19.7 17.1 18.2 18.6 16.4 18.4 15.4 19.9 13.2 20.2 12 19"/><path d="M12 4.2V19"/><path d="M10.4 7.4h3.2M10.4 10.2h3.2M10.4 13h3.2M10.4 15.8h3.2"/><path d="M7.6 7.4c-.9.6-1.2 1.6-.8 2.6M6.4 12.6c.9-.3 1.9 0 2.4.8M16.4 7.4c.9.6 1.2 1.6.8 2.6M17.6 12.6c-.9-.3-1.9 0-2.4.8"/></svg><i class="cdot"></i>';
  document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('#cbtn');if(t){e.preventDefault();e.stopPropagation();abrir()}},true);
  ['touchstart','touchend','mousedown','pointerdown'].forEach(function(ev){b.addEventListener(ev,function(e){e.stopPropagation()},false)});
  var bell=document.getElementById('bdg'),hb=bell&&bell.closest('button');
@@ -105,6 +108,6 @@ function ponerBtn(){var b=document.getElementById('cbtn')||window.__cbtn;if(!b)r
   else d.remove()});
  var w=document.createTreeWalker(m,NodeFilter.SHOW_TEXT,null,false),x;
  while((x=w.nextNode()))if(x.nodeValue.indexOf('del Excel')>=0)x.nodeValue=x.nodeValue.replace(/del Excel/g,'del modelo')}
-setInterval(function(){ponerBtn();arreglarAviso()},300);window.addEventListener('scroll',ponerBtn,{passive:true});window.addEventListener('resize',ponerBtn);
+setInterval(function(){ponerBtn();arreglarAviso();punto()},300);window.addEventListener('scroll',ponerBtn,{passive:true});window.addEventListener('resize',ponerBtn);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
