@@ -10,6 +10,7 @@ Corre después de modelo.py (lee data/modelo_<liga>.json) y agrega 3 tablas al m
 La app usa las filas del equipo del usuario. Si algo falla, el archivo queda como estaba.
 """
 import json, os, re, sys
+from datetime import datetime, timezone
 from math import erf, sqrt
 import requests
 
@@ -22,6 +23,7 @@ URL_MATCH = "https://api.sleeper.app/v1/league/{lg}/matchups/{w}"
 FLEX = {"FLEX": {"RB", "WR", "TE"}, "WRRB_FLEX": {"RB", "WR"}, "REC_FLEX": {"WR", "TE"},
         "SUPER_FLEX": {"QB", "RB", "WR", "TE"}, "IDP_FLEX": set()}
 NO_TITULAR = {"BN", "IR", "TAXI"}
+EQ_NFL = {"LAR": "LA", "JAC": "JAX", "WSH": "WAS"}  # abreviaturas de Sleeper/ESPN -> nflverse
 
 
 def prob_normal(z):
@@ -66,11 +68,20 @@ def clave(sid, sl_a):
     return sl_a.get(sid, sid)
 
 
-def optima(jug, slots):
-    """jug: lista de dicts con pos y proy. Llena primero los puestos fijos y después los flex."""
-    libres = sorted([j for j in jug if j["proy"] > 0], key=lambda j: -j["proy"])
-    orden = sorted(range(len(slots)), key=lambda i: (slots[i] in FLEX, len(FLEX.get(slots[i], ()))))
+def optima(jug, slots, puestos=None):
+    """jug: lista de dicts con pos y proy. Los jugadores cuyo partido ya empezó ("lock") no se pueden
+    mover: si son titulares en Sleeper se quedan en su puesto y si están en la banca no pueden entrar.
+    Con el resto se llenan primero los puestos fijos y después los flex."""
     out = [None] * len(slots)
+    usados = set()
+    for i, j in enumerate((puestos or [])[:len(slots)]):
+        if j and j.get("lock"):
+            out[i] = j
+            usados.add(j["k"])
+    libres = sorted([j for j in jug if j["proy"] > 0 and not j.get("lock") and j["k"] not in usados],
+                    key=lambda j: -j["proy"])
+    orden = sorted([i for i in range(len(slots)) if out[i] is None],
+                   key=lambda i: (slots[i] in FLEX, len(FLEX.get(slots[i], ()))))
     for i in orden:
         s = slots[i]
         ok = FLEX.get(s, {s})
@@ -80,6 +91,17 @@ def optima(jug, slots):
                 libres.remove(j)
                 break
     return out
+
+
+def inicios(w):
+    """{equipo NFL: hora de inicio (UTC)} de la semana w, desde el calendario de nflverse."""
+    try:
+        cal = m.calendario(m.bajar("games"), m.TEMPORADA)
+        cal = cal[cal["week"] == w]
+        return {r["nfl"]: r["inicio"].astimezone(timezone.utc) for _, r in cal.iterrows()}
+    except Exception as e:
+        print(f"Semana: sin calendario ({e}); no bloqueo jugadores que ya jugaron")
+        return {}
 
 
 def total(lista):
@@ -92,6 +114,8 @@ def main():
     except Exception as e:
         print(f"Semana: no pude leer los IDs de Sleeper ({e})")
         return
+    ahora = datetime.now(timezone.utc)
+    ini_sem = {}
     for liga, lg in m.LIGAS.items():
         nombre = re.sub(r"[^a-z0-9]+", "_", m.norm(liga))
         ruta = os.path.join(m.RAIZ, "data", f"modelo_{nombre}.json")
@@ -111,16 +135,31 @@ def main():
             rk = {r["Jugador"]: r for r in tabla_obj(out.get("App_RankSemana"))}
             nov = {r["Jugador"]: r for r in tabla_obj(out.get("App_Novedades"))}
             col = f"S{w}"
+            if w not in ini_sem:
+                ini_sem[w] = inicios(w)
+            ini = ini_sem[w]
+            pts = {}
+            for mt in match:
+                pts.update(mt.get("players_points") or {})
 
             def jugador(sid):
                 k = clave(sid, sl_a)
                 r = ps.get(k)
+                nfl = k[:-4] if str(k).endswith(" DST") else (r or {}).get("NFL", "")
+                nfl = EQ_NFL.get(str(nfl), str(nfl))
+                hora = ini.get(nfl)
+                lock = bool(hora and hora <= ahora)  # su partido ya empezó: Sleeper no deja moverlo
+                real = pts.get(str(sid))
                 if not r:
-                    return {"k": k, "nombre": str(sid), "pos": "", "proy": 0.0, "rival": "", "prob": 1}
+                    return {"k": k, "nombre": str(sid), "pos": "", "proy": float(real or 0), "rival": "",
+                            "prob": 1, "lock": lock}
                 x = rk.get(r["Jugador"], {})
                 pr = r.get(col)
-                return {"k": k, "nombre": r["Jugador"], "pos": r["Pos"], "proy": float(pr) if isinstance(pr, (int, float)) else 0.0,
-                        "rival": x.get("Rival", ""), "prob": x.get("Prob", 1)}
+                pr = float(pr) if isinstance(pr, (int, float)) else 0.0
+                if lock and isinstance(real, (int, float)):
+                    pr = max(pr, float(real))  # ya jugó o está jugando: cuenta al menos lo que lleva
+                return {"k": k, "nombre": r["Jugador"], "pos": r["Pos"], "proy": pr,
+                        "rival": x.get("Rival", ""), "prob": x.get("Prob", 1), "lock": lock}
 
             eq = {}
             for r in rosters:
@@ -136,7 +175,7 @@ def main():
                     e["mid"] = mt.get("matchup_id")
                     e["puestos"] = [jugador(s) if s and s != "0" else None for s in (mt.get("starters") or [])]
             for e in eq.values():
-                e["opt"] = optima(e["plant"], slots)
+                e["opt"] = optima(e["plant"], slots, e.get("puestos"))
                 e["p_opt"], e["p_sl"] = total(e["opt"]), total(e.get("puestos") or [])
 
             res, alin, riv = [], [], []
@@ -145,14 +184,27 @@ def main():
                 rv = rv[0] if rv else None
                 gana = round(e["p_opt"] - e["p_sl"], 2)
                 prob = prob_normal((e["p_opt"] - rv["p_opt"]) / SD_DIF) if rv else None
-                tit = [j["nombre"] if j else "—" for j in e["opt"]]
-                msg_al = (f"Cambia tu alineación en Sleeper: ganas {gana:.1f} pts proyectados. Titulares óptimos: "
-                          + ", ".join(tit) + ".") if gana > 0.5 else "Tu alineación en Sleeper ya es la óptima."
+                ya = {j["k"] for j in (e.get("puestos") or []) if j}
+                op = {j["k"] for j in e["opt"] if j}
+                entra = [j["nombre"] for j in e["opt"] if j and j["k"] not in ya]
+                sale = [j["nombre"] for j in (e.get("puestos") or []) if j and j["k"] not in op]
+                n_lock = sum(1 for j in (e.get("puestos") or []) if j and j.get("lock"))
+                nota = ((" (1 titular ya jugó y no se puede mover.)" if n_lock == 1 else
+                         f" ({n_lock} titulares ya jugaron y no se pueden mover.)") if n_lock else "")
+                if gana > 0.5 and entra:
+                    msg_al = (f"Cambia tu alineación en Sleeper: ganas {gana:.1f} pts proyectados. Entra: "
+                              + ", ".join(entra) + (". Sale: " + ", ".join(sale) if sale else "") + "." + nota)
+                elif n_lock and n_lock >= len([j for j in (e.get("puestos") or []) if j]):
+                    msg_al = "Todos tus titulares ya jugaron; no hay cambios posibles."
+                else:
+                    msg_al = "Tu alineación en Sleeper ya es la óptima." + nota
                 bajas = []
                 for j in (e.get("puestos") or []):
                     if not j:
                         bajas.append("Puesto vacío en tu alineación")
                         continue
+                    if j.get("lock"):
+                        continue  # ya jugó: no es una baja
                     nv = nov.get(j["nombre"], {})
                     if str(j["rival"]).upper() == "BYE":
                         bajas.append(f"{j['nombre']} (bye)")
@@ -179,7 +231,8 @@ def main():
                             msg_prioridad=enf, slots=",".join(slots), liga_id=lg, mi_k=mi_k, mi_dst=mi_d,
                             fuente_partido=f"Modelo + Sleeper ({out.get('generado', '')[:16].replace('T', ' ')} UTC)")
                 res += [[e["nombre"], k, v] for k, v in vals.items()]
-                alin += [[e["nombre"], s, j["nombre"] if j else "—", j["rival"] if j else "", j["proy"] if j else 0]
+                alin += [[e["nombre"], s, j["nombre"] if j else "—",
+                          ((str(j["rival"]) + " 🔒").strip() if j.get("lock") else j["rival"]) if j else "", j["proy"] if j else 0]
                          for s, j in zip(slots, e["opt"])]
                 if rv:
                     top = sorted([j for j in (rv.get("puestos") or []) if j], key=lambda j: -j["proy"])[:6]
