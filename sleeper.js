@@ -72,7 +72,7 @@ function slApply(){if(!SL.ros||SL.lid!==R.liga_id||!D)return;var key=LIGA+'|'+SL
 function slAgo(){if(SL.err)return '<span class="rd">'+esc(SL.err)+'</span>';if(!SL.t||SL.lid!==R.liga_id)return 'Sleeper: cargando…';var m=Math.round((Date.now()-SL.t)/60000);return 'Sleeper hace '+(m<1?'<1':m)+' min'}
 (function(){
  var _lb=ligaBar;ligaBar=function(){var h=_lb();if(!D||!R.liga_id)return h;
-  var w=SL.wk&&+R.semana&&SL.wk!==+R.semana&&SL.lid===R.liga_id?'<div class="note y" style="margin:-4px 0 10px">⚠ Sleeper ya está en la semana '+esc(SL.wk)+' y las proyecciones del Excel son de la '+esc(R.semana)+'. Corre ActualizarTodo.</div>':'';
+  var w=SL.wk&&+R.semana&&SL.wk>+R.semana&&SL.lid===R.liga_id?'<div class="note y" style="margin:-4px 0 10px">⚠ Sleeper ya está en la semana '+esc(SL.wk)+' y el modelo todavía en la '+esc(R.semana)+'. Se actualiza solo en unas horas (o corre el Action en GitHub).</div>':'';
   return h+'<div class="sm mu" style="margin:-4px 0 10px">Proyecciones del Excel '+esc(D.actualizado)+' · rosters, alineaciones y lesiones: '+slAgo()+' <button onclick="slRefresh()" style="background:var(--gr);border:1px solid var(--ln);color:var(--li);border-radius:14px;padding:3px 10px;font-size:12px;font-weight:700;margin-left:4px">↻ Actualizar</button></div>'+w};
  var _h=V.home;V.home=function(){var x=_h();if(!SL.me||SL.lid!==R.liga_id)return x;var a='';
   if(SL.alerts&&SL.alerts.length)a+='<div class="msg"><b class="rd">Titulares con problema:</b> '+esc(SL.alerts.join(', '))+'</div>';
