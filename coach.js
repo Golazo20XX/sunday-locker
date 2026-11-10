@@ -52,11 +52,10 @@ function enviar(q){q=(q||'').trim();if(!q||ocupado)return;
 var SUG=['¿Qué alineación pongo esta semana?','¿Qué waiver pido y cuánto ofrezco?','¿Cómo voy contra mi rival?','¿A quién debería vender?','¿Qué DST hago streaming?'];
 function abierto(){return document.getElementById('cpn').classList.contains('on')}
 function abrir(){var p=document.getElementById('cpn');if(abierto())return;p.classList.add('on');document.body.classList.add('coach-on');
- try{history.pushState({coach:1},'')}catch(e){}
  setTimeout(function(){try{document.getElementById('cq').focus()}catch(e){}},80);
  if(!document.getElementById('cms').children.length)add('Hola, soy Coach Intel. Escribe tu pregunta abajo o toca una sugerida. Respondo con los datos del modelo de esta liga.','a')}
 function cerrar(deHist){if(!abierto())return;document.getElementById('cpn').classList.remove('on');document.body.classList.remove('coach-on');
- if(!deHist){try{if(history.state&&history.state.coach)history.back()}catch(e){}}}
+}
 function init(){if(document.getElementById('cbtn'))return;
  var b=document.createElement('button');b.id='cbtn';b.type='button';b.title='Coach Intel';b.setAttribute('aria-label','Coach Intel');b.textContent='💬';
  document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('#cbtn');if(t){e.preventDefault();e.stopPropagation();abrir()}},true);
@@ -72,13 +71,14 @@ function init(){if(document.getElementById('cbtn'))return;
  [].forEach.call(p.querySelectorAll('#csg .cs'),function(x){x.onclick=function(){enviar(x.textContent)}});
  document.getElementById('cgo').onclick=function(){enviar(leer())};
  document.getElementById('cq').onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();enviar(leer())}};
- window.addEventListener('popstate',function(){cerrar(true)});
  document.addEventListener('keydown',function(e){if(e.key==='Escape')cerrar(false)});
  document.getElementById('cq').addEventListener('keydown',function(e){if(e.key==='Escape')cerrar(false)})}
+var T0=Date.now();
 function ponerBtn(){var b=document.getElementById('cbtn')||window.__cbtn;if(!b)return;window.__cbtn=b;
  var bell=document.getElementById('bdg'),hb=bell&&bell.closest('button');
- if(hb&&hb.parentNode){if(b.nextSibling!==hb)hb.parentNode.insertBefore(b,hb);b.classList.remove('flot')}
- else{b.classList.add('flot');if(!document.body.contains(b))document.body.appendChild(b)}}
-setInterval(ponerBtn,1000);
+ if(hb&&hb.parentNode){if(b.nextSibling!==hb)hb.parentNode.insertBefore(b,hb);b.classList.remove('flot');b.style.visibility=''}
+ else if(Date.now()-T0>4000){b.classList.add('flot');b.style.visibility='';if(!document.body.contains(b))document.body.appendChild(b)}
+ else{b.style.visibility='hidden'}}
+setInterval(ponerBtn,300);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
