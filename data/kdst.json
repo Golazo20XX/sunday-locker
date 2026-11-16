@@ -1,1 +1,1 @@
-{"generado": "2026-11-15T21:26+00:00", "posiciones": {"DST": {"partidos": 45, "semanas": 2, "error_modelo": 4.41, "error_calibrado": 4.41, "error_promedio": 4.92, "factor": 1.0, "peso": 1.0, "usa": false}}}
+{"generado": "2026-11-16T00:46+00:00", "posiciones": {"K": {"partidos": 48, "semanas": 2, "error_modelo": 3.83, "error_calibrado": 3.83, "error_promedio": 3.89, "factor": 1.0, "peso": 1.0, "usa": false}, "DST": {"partidos": 49, "semanas": 2, "error_modelo": 4.27, "error_calibrado": 4.25, "error_promedio": 4.63, "factor": 1.386, "peso": 1.0, "usa": false}}}
