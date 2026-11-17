@@ -41,9 +41,16 @@ function mencionados(q){var Q=' '+nrm(q)+' ',hit={};
 function planteles(){var src=null;['App_ProySem','App_RankROS','App_RankSemana','App_Valor'].some(function(t){var rs=D.datos[t];if(rs&&rs.length&&('Dueño' in rs[0])){src=rs;return true}});
  if(!src)return '';var g={};src.forEach(function(r){var o=r['Dueño'];if(!o||o==='Libre'||!r.Jugador)return;(g[o]=g[o]||[]).push(r.Jugador+' ('+(r.Pos||'')+')')});
  return Object.keys(g).sort().map(function(o){return o+': '+g[o].join(', ')}).join('\n')}
-function contexto(q){
+function hoyTxt(){var d=new Date();return d.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}
+function encabezado(){var w=(typeof R!=='undefined'&&R&&R.semana)||'';
+ return 'Liga: '+(typeof LIGA!=='undefined'&&LIGA?LIGA:'(única)')+'\nMi equipo: '+(typeof R!=='undefined'&&R&&R.equipo||'')+
+ '\nHoy (hora del usuario): '+hoyTxt()+'\nSemana actual de la NFL: '+w+'\nDatos actualizados: '+(D.actualizado||'')+'\n'+
+ 'REGLAS PARA LEER LOS DATOS:\n- Las columnas S1…S17 (App_ProySem) y Proy son PROYECCIONES del modelo, no puntos reales. Un número en la semana '+w+' NO significa que el jugador ya jugó.\n'+
+ '- Un jugador solo "ya jugó" esta semana si su fila de alineación/rival lleva el candado 🔒. Si no hay 🔒, su partido todavía no empieza.\n'+
+ '- Bye: Rival = BYE o proyección 0 en esa semana.\n- Si un dato no está en las tablas, dilo; no lo supongas.\n'}
+ function contexto(q){
  if(typeof D==='undefined'||!D||!D.datos)return '';
- var out='Liga: '+(typeof LIGA!=='undefined'&&LIGA?LIGA:'(única)')+'\nMi equipo: '+(typeof R!=='undefined'&&R&&R.equipo||'')+'\nSemana actual: '+(typeof R!=='undefined'&&R&&R.semana||'')+'\nDatos actualizados: '+(D.actualizado||'')+'\n';
+ var out=encabezado();
  var js=mencionados(q||'');
  if(js.length){out+='\n## Jugadores mencionados en la pregunta (todas sus filas)\n';
   tablasJug().forEach(function(t){var rs=D.datos[t].filter(function(r){return js.indexOf(r.Jugador)>=0});if(rs.length)out+='\n### '+t+'\n'+csv(rs)+'\n'})}
