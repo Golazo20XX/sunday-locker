@@ -21,16 +21,16 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0031492,Jason Myers,K,SEA,0.0
 11,00-0031503,Jameis Winston,QB,NYG,0.0
 11,00-0031588,Stefon Diggs,WR,WAS,10.71
-11,00-0031610,Darren Waller,TE,CAR,7.41
+11,00-0031610,Darren Waller,TE,CAR,7.5
 11,00-0032104,Ameer Abdullah,RB,JAX,2.74
 11,00-0032268,Marcus Mariota,QB,WAS,0.0
 11,00-0032385,Sterling Shepard,WR,NYJ,3.14
 11,00-0032392,Austin Hooper,TE,ATL,0.0
-11,00-0032398,Chris Moore,WR,BAL,2.39
+11,00-0032398,Chris Moore,WR,BAL,2.43
 11,00-0032464,Kalif Raymond,WR,CHI,7.38
 11,00-0032569,Wil Lutz,K,DEN,7.98
 11,00-0032726,Ka'imi Fairbairn,K,HOU,12.92
-11,00-0032764,Derrick Henry,RB,BAL,14.83
+11,00-0032764,Derrick Henry,RB,BAL,15.04
 11,00-0032775,Demarcus Robinson,WR,SF,6.0
 11,00-0032950,Carson Wentz,QB,MIN,0.0
 11,00-0032951,Laquon Treadwell,WR,IND,4.35
@@ -38,11 +38,11 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0033090,Hunter Henry,TE,NE,0.0
 11,00-0033106,Jared Goff,QB,DET,19.48
 11,00-0033110,Tyler Higbee,TE,LA,0.0
-11,00-0033119,Jacoby Brissett,QB,BAL,16.32
+11,00-0033119,Jacoby Brissett,QB,BAL,16.55
 11,00-0033217,Mo Alie-Cox,TE,IND,0.0
 11,00-0033246,Johnny Mundt,TE,PHI,1.19
 11,00-0033280,Christian McCaffrey,RB,SF,16.74
-11,00-0033288,George Kittle,TE,SF,9.87
+11,00-0033288,George Kittle,TE,SF,9.88
 11,00-0033293,Aaron Jones,RB,MIN,9.18
 11,00-0033303,Harrison Butker,K,KC,7.03
 11,00-0033307,Kendrick Bourne,WR,ARI,0.0
@@ -54,12 +54,12 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0033553,James Conner,RB,ARI,0.0
 11,00-0033555,Mack Hollins,WR,NE,0.0
 11,00-0033576,Eric Saubert,TE,SEA,0.0
-11,00-0033589,David Moore,WR,CAR,0.54
+11,00-0033589,David Moore,WR,CAR,0.55
 11,00-0033662,Cooper Rush,QB,TB,0.0
 11,00-0033699,Austin Ekeler,RB,WAS,11.28
 11,00-0033757,Robert Tonyan,TE,PIT,1.9
 11,00-0033787,Jake Elliott,K,PHI,3.95
-11,00-0033854,Dare Ogunbowale,RB,HOU,4.92
+11,00-0033854,Dare Ogunbowale,RB,HOU,4.91
 11,00-0033858,Jonnu Smith,TE,GB,0.0
 11,00-0033869,Mitchell Trubisky,QB,TEN,0.0
 11,00-0033873,Patrick Mahomes,QB,KC,27.33
@@ -70,7 +70,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0033908,Cooper Kupp,WR,SEA,0.0
 11,00-0033921,Chris Godwin Jr.,WR,TB,6.3
 11,00-0033955,Jeremy McNichols,RB,WAS,0.0
-11,00-0034173,Eddy Pineiro,K,SF,5.88
+11,00-0034173,Eddy Pineiro,K,SF,5.87
 11,00-0034272,Marquez Valdes-Scantling,WR,PIT,4.02
 11,00-0034348,Courtland Sutton,WR,DEN,10.59
 11,00-0034351,Dallas Goedert,TE,PHI,7.14
@@ -80,7 +80,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0034487,Trent Sherfield,WR,BUF,0.98
 11,00-0034577,Kyle Allen,QB,BUF,0.0
 11,00-0034613,Tanner Hudson,TE,CIN,0.0
-11,00-0034753,Mark Andrews,TE,BAL,6.19
+11,00-0034753,Mark Andrews,TE,BAL,6.28
 11,00-0034771,Mason Rudolph,QB,PIT,0.0
 11,00-0034775,Christian Kirk,WR,SF,0.0
 11,00-0034794,Jason Sanders,K,NYJ,9.53
@@ -95,7 +95,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0034857,Josh Allen,QB,BUF,26.94
 11,00-0034869,Sam Darnold,QB,SEA,0.0
 11,00-0034960,Jakobi Meyers,WR,JAX,8.63
-11,00-0034975,Justice Hill,RB,BAL,7.54
+11,00-0034975,Justice Hill,RB,BAL,7.64
 11,00-0034981,Foster Moreau,TE,HOU,4.27
 11,00-0035021,Ashton Dulin,WR,IND,3.5
 11,00-0035039,Stephen Carlson,TE,CHI,6.3
@@ -136,7 +136,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0036139,Rico Dowdle,RB,PIT,9.62
 11,00-0036158,J.K. Dobbins,RB,DEN,9.64
 11,00-0036162,Tyler Bass,K,BUF,12.45
-11,00-0036165,Isaiah Hodgins,WR,PIT,4.18
+11,00-0036165,Isaiah Hodgins,WR,PIT,4.17
 11,00-0036182,Nick Westbrook-Ikhine,WR,IND,0.92
 11,00-0036187,Reggie Gilliam,RB,NE,0.0
 11,00-0036212,Tua Tagovailoa,QB,ATL,0.0
@@ -162,12 +162,12 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0036422,Adam Trautman,TE,DEN,3.81
 11,00-0036425,DeeJay Dallas,RB,MIN,0.68
 11,00-0036429,Charlie Woerner,TE,ATL,0.0
-11,00-0036442,Joe Burrow,QB,CIN,28.93
+11,00-0036442,Joe Burrow,QB,CIN,28.92
 11,00-0036463,Chris Blair,WR,ATL,0.0
 11,00-0036510,Kenny Yeboah,TE,ARI,0.0
-11,00-0036550,Rashod Bateman,WR,BAL,5.1
+11,00-0036550,Rashod Bateman,WR,BAL,5.17
 11,00-0036554,Nico Collins,WR,HOU,12.68
-11,00-0036555,Chuba Hubbard,RB,CAR,18.78
+11,00-0036555,Chuba Hubbard,RB,CAR,18.96
 11,00-0036556,Brevin Jordan,TE,HOU,0.0
 11,00-0036567,Elijah Mitchell,RB,PHI,10.18
 11,00-0036613,Jaylen Waddle,WR,DEN,0.0
@@ -180,7 +180,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0036754,Brock Wright,TE,DET,3.23
 11,00-0036755,Jaret Patterson,RB,DEN,4.89
 11,00-0036775,Brandon Smith,WR,PIT,4.61
-11,00-0036816,Riley Patterson,K,BAL,4.94
+11,00-0036816,Riley Patterson,K,BAL,5.01
 11,00-0036841,Austin Trammell,WR,JAX,1.59
 11,00-0036849,Tutu Atwell,WR,LA,0.0
 11,00-0036854,Evan McPherson,K,CIN,9.55
@@ -196,16 +196,16 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0036919,Kenny Gainwell,RB,TB,7.58
 11,00-0036945,Justin Fields,QB,KC,0.0
 11,00-0036959,Michael Bandy,WR,DEN,2.93
-11,00-0036963,Amon-Ra St. Brown,WR,DET,13.51
+11,00-0036963,Amon-Ra St. Brown,WR,DET,13.52
 11,00-0036970,Kyle Pitts,TE,ATL,0.0
 11,00-0036971,Trevor Lawrence,QB,JAX,25.06
 11,00-0036972,Mac Jones,QB,SF,0.0
 11,00-0036973,Travis Etienne,RB,NO,9.92
 11,00-0036980,Elijah Moore,WR,PHI,3.33
 11,00-0036988,Josh Palmer,WR,BUF,3.67
-11,00-0036997,Javonte Williams,RB,DAL,19.39
+11,00-0036997,Javonte Williams,RB,DAL,19.4
 11,00-0037004,Hunter Long,TE,ARI,1.98
-11,00-0037005,Tommy Tremble,TE,CAR,5.86
+11,00-0037005,Tommy Tremble,TE,CAR,5.93
 11,00-0037012,Trey Lance,QB,LAC,0.0
 11,00-0037085,Tyler Badie,RB,DEN,0.0
 11,00-0037086,Grant Calcaterra,TE,PHI,1.28
@@ -221,7 +221,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0037239,Chris Olave,WR,NO,11.01
 11,00-0037240,Jameson Williams,WR,DET,10.65
 11,00-0037247,George Pickens,WR,DAL,15.64
-11,00-0037248,James Cook,RB,BUF,18.76
+11,00-0037248,James Cook,RB,BUF,18.77
 11,00-0037252,Greg Dulcich,TE,MIA,4.49
 11,00-0037256,Rachaad White,RB,WAS,14.72
 11,00-0037261,Khalil Shakir,WR,BUF,10.1
@@ -246,7 +246,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0037545,Rashid Shaheed,WR,SEA,0.0
 11,00-0037557,Ronnie Rivers,RB,LA,0.0
 11,00-0037563,Malik Davis,RB,DAL,0.0
-11,00-0037614,John Metchie III,WR,CAR,3.78
+11,00-0037614,John Metchie III,WR,CAR,3.82
 11,00-0037617,Hassan Haskins,RB,CLE,0.0
 11,00-0037664,Alec Pierce,WR,IND,0.0
 11,00-0037666,Jalen Tolbert,WR,MIA,2.83
@@ -262,7 +262,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0037805,Jeremy Ruckert,TE,NYJ,1.61
 11,00-0037809,Chig Okonkwo,TE,WAS,6.05
 11,00-0037816,Romeo Doubs,WR,NE,0.0
-11,00-0037834,Brock Purdy,QB,SF,20.69
+11,00-0037834,Brock Purdy,QB,SF,20.68
 11,00-0037837,Calvin Austin III,WR,NYG,0.0
 11,00-0037838,Isaiah Likely,TE,NYG,9.15
 11,00-0037840,Kyren Williams,RB,LA,0.0
@@ -289,7 +289,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0038409,Lew Nichols III,RB,PIT,2.28
 11,00-0038416,Tyson Bagent,QB,CHI,0.0
 11,00-0038428,Andre Szmyt,K,CLE,0.0
-11,00-0038454,Keaton Mitchell,RB,LAC,5.71
+11,00-0038454,Keaton Mitchell,RB,LAC,5.7
 11,00-0038465,Malik Heath,WR,ATL,0.0
 11,00-0038476,Tommy DeVito,QB,NE,0.0
 11,00-0038488,Brady Russell,RB,SEA,0.0
@@ -308,7 +308,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0038567,Chad Ryland,K,ARI,5.69
 11,00-0038573,Derius Davis,WR,LAC,1.22
 11,00-0038589,Josh Whyle,TE,GB,0.0
-11,00-0038597,Chase Brown,RB,CIN,16.64
+11,00-0038597,Chase Brown,RB,CIN,16.65
 11,00-0038606,Parker Washington,WR,JAX,11.26
 11,00-0038608,Kayshon Boutte,WR,HOU,8.37
 11,00-0038611,Chris Rodriguez Jr.,RB,JAX,5.21
@@ -332,7 +332,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0038809,Ben Sims,TE,SEA,0.0
 11,00-0038824,Ryan Miller,WR,NE,0.0
 11,00-0038839,Mitchell Tinsley,WR,CIN,3.76
-11,00-0038840,Brycen Tremayne,WR,CAR,1.47
+11,00-0038840,Brycen Tremayne,WR,CAR,1.49
 11,00-0038891,Shedrick Jackson,WR,ARI,2.6
 11,00-0038896,Jacob Saylors,RB,DET,0.6
 11,00-0038905,Blake Grupe,K,LA,0.0
@@ -354,17 +354,17 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0039041,Elijah Higgins,TE,ARI,3.12
 11,00-0039050,Payne Durham,TE,TB,0.6
 11,00-0039062,Jonathan Mingo,WR,DAL,0.0
-11,00-0039064,Zay Flowers,WR,BAL,11.43
+11,00-0039064,Zay Flowers,WR,BAL,11.54
 11,00-0039065,Sam LaPorta,TE,DET,9.75
 11,00-0039066,Michael Mayer,TE,LV,7.24
 11,00-0039067,Rashee Rice,WR,KC,11.9
 11,00-0039074,Davis Allen,TE,LA,0.0
 11,00-0039075,Puka Nacua,WR,LA,0.0
 11,00-0039107,Stetson Bennett,QB,LA,0.0
-11,00-0039139,Jahmyr Gibbs,RB,DET,19.06
+11,00-0039139,Jahmyr Gibbs,RB,DET,19.07
 11,00-0039144,Luke Musgrave,TE,GB,0.0
 11,00-0039146,Jayden Reed,WR,GB,0.0
-11,00-0039150,Bryce Young,QB,CAR,18.76
+11,00-0039150,Bryce Young,QB,CAR,19.0
 11,00-0039163,C.J. Stroud,QB,HOU,25.54
 11,00-0039164,Anthony Richardson,QB,IND,0.0
 11,00-0039165,Zach Charbonnet,RB,SEA,0.0
@@ -373,7 +373,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0039299,George Holani,RB,SEA,0.0
 11,00-0039337,Malik Nabers,WR,NYG,10.95
 11,00-0039338,Brock Bowers,TE,LV,0.0
-11,00-0039342,Xavier Legette,WR,CAR,4.33
+11,00-0039342,Xavier Legette,WR,CAR,4.39
 11,00-0039344,Jonathon Brooks,RB,CAR,0.0
 11,00-0039355,Luke McCaffrey,WR,WAS,2.2
 11,00-0039356,Ja'Tavion Sanders,TE,CAR,0.0
@@ -382,9 +382,10 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0039365,Jacob Cowing,WR,SF,2.39
 11,00-0039373,Audric Estime,RB,NO,7.48
 11,00-0039376,Spencer Rattler,QB,NO,0.0
+11,00-0039379,Jamari Thrash,WR,TEN,2.28
 11,00-0039384,Tyrone Tracy Jr.,RB,NYG,0.0
 11,00-0039391,Kimani Vidal,RB,LAC,6.01
-11,00-0039394,Casey Washington,WR,CAR,2.91
+11,00-0039394,Casey Washington,WR,CAR,2.95
 11,00-0039398,Joe Milton III,QB,PHI,0.0
 11,00-0039404,Will Reichard,K,MIN,9.57
 11,00-0039405,Jawhar Jordan,RB,HOU,0.0
@@ -396,8 +397,8 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0039458,Brenden Bates,TE,JAX,1.51
 11,00-0039471,Frank Gore Jr.,RB,BUF,8.7
 11,00-0039489,Hayden Rucci,TE,PHI,1.16
-11,00-0039491,Jalen Coker,WR,CAR,9.19
-11,00-0039498,Harrison Mevis,K,BAL,5.75
+11,00-0039491,Jalen Coker,WR,CAR,9.31
+11,00-0039498,Harrison Mevis,K,BAL,5.83
 11,00-0039518,Treyton Welch,TE,NO,1.12
 11,00-0039530,Brevyn Spann-Ford,TE,DAL,6.14
 11,00-0039576,Spencer Shrader,K,IND,8.24
@@ -416,7 +417,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0039751,Jordan Whittington,WR,LA,0.0
 11,00-0039754,Devin Culp,TE,MIN,1.29
 11,00-0039757,Terrell Jennings,RB,NE,0.0
-11,00-0039792,Devontez Walker,WR,BAL,3.6
+11,00-0039792,Devontez Walker,WR,BAL,3.65
 11,00-0039793,AJ Barner,TE,SEA,0.0
 11,00-0039794,Braelon Allen,RB,NYJ,8.09
 11,00-0039798,Isaiah Davis,RB,NYJ,1.59
@@ -440,19 +441,19 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0039915,Ladd McConkey,WR,LAC,0.0
 11,00-0039916,Ricky Pearsall,WR,SF,0.0
 11,00-0039917,Michael Penix Jr.,QB,ATL,0.0
-11,00-0039918,Caleb Williams,QB,CHI,24.63
+11,00-0039918,Caleb Williams,QB,CHI,24.62
 11,00-0039919,Rome Odunze,WR,CHI,10.44
 11,00-0039920,Malachi Corley,WR,CLE,0.0
 11,00-0039921,Trey Benson,RB,ARI,0.0
 11,00-0039923,J.J. McCarthy,QB,NYG,15.16
 11,00-0040009,Savion Williams,WR,GB,0.0
-11,00-0040014,Kyle McCord,QB,MIA,13.68
+11,00-0040014,Kyle McCord,QB,MIA,13.67
 11,00-0040024,Darius Cooper,WR,PHI,6.49
 11,00-0040074,Tyler Loop,K,BAL,0.0
 11,00-0040078,Brashard Smith,RB,KC,0.0
 11,00-0040081,Jake Briningstool,TE,KC,3.39
 11,00-0040122,Ashton Jeanty,RB,LV,11.84
-11,00-0040124,Tetairoa McMillan,WR,CAR,10.92
+11,00-0040124,Tetairoa McMillan,WR,CAR,11.01
 11,00-0040126,Colston Loveland,TE,CHI,11.44
 11,00-0040128,Tyler Warren,TE,IND,8.07
 11,00-0040129,Emeka Egbuka,WR,TB,9.35
@@ -464,12 +465,12 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0040154,Tai Felton,WR,MIN,4.11
 11,00-0040162,Dylan Sampson,RB,CLE,0.0
 11,00-0040164,Jaylin Lane,WR,WAS,0.0
-11,00-0040170,Elic Ayomanor,WR,TEN,9.35
+11,00-0040170,Elic Ayomanor,WR,TEN,9.34
 11,00-0040172,Jordan Watkins,WR,SF,6.88
 11,00-0040177,Jordan James,RB,SF,1.29
 11,00-0040179,DJ Giddens,RB,IND,2.49
 11,00-0040184,KeAndre Lambert-Smith,WR,LAC,5.03
-11,00-0040187,Mitchell Evans,TE,CAR,2.92
+11,00-0040187,Mitchell Evans,TE,CAR,2.95
 11,00-0040189,Oronde Gadsden II,TE,LAC,3.59
 11,00-0040194,Jackson Hawes,TE,BUF,2.58
 11,00-0040198,Ollie Gordon II,RB,MIA,13.64
@@ -485,16 +486,16 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0040237,Tez Johnson,WR,TB,4.48
 11,00-0040238,LeQuint Allen Jr.,RB,JAX,1.8
 11,00-0040242,Jacory Croskey-Merritt,RB,WAS,0.0
-11,00-0040259,Gage Larvadain,WR,BAL,0.99
-11,00-0040265,Ja'Seem Reed,WR,CAR,5.59
+11,00-0040259,Gage Larvadain,WR,BAL,1.01
+11,00-0040265,Ja'Seem Reed,WR,CAR,5.66
 11,00-0040277,Jahdae Walker,WR,CHI,1.93
-11,00-0040279,Ryan Fitzgerald,K,CAR,7.38
+11,00-0040279,Ryan Fitzgerald,K,CAR,7.48
 11,00-0040298,Andrew Armstrong,WR,KC,3.23
 11,00-0040311,Theo Wease Jr.,WR,LAC,3.78
-11,00-0040331,Patrick Herbert,TE,LAC,5.03
+11,00-0040331,Patrick Herbert,TE,LAC,5.02
 11,00-0040363,Keleki Latu,TE,BUF,0.85
 11,00-0040390,Jackson Meeks,TE,DET,6.04
-11,00-0040394,Anthony Tyus III,RB,CAR,1.39
+11,00-0040394,Anthony Tyus III,RB,CAR,1.41
 11,00-0040398,Brady Cook,QB,MIA,0.0
 11,00-0040405,Jamaal Pritchett,WR,NYJ,4.98
 11,00-0040429,Josh Williams,RB,TB,5.79
@@ -516,7 +517,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0040590,Konata Mumpfield,WR,LA,0.0
 11,00-0040598,Mark Redman,TE,GB,0.0
 11,00-0040621,Montorie Foster Jr,WR,SEA,0.0
-11,00-0040644,Trevor Etienne,RB,CAR,2.97
+11,00-0040644,Trevor Etienne,RB,CAR,3.01
 11,00-0040646,Jalen Royals,WR,KC,3.12
 11,00-0040648,Tory Horton,WR,SEA,0.0
 11,00-0040663,Harold Fannin Jr.,TE,CLE,0.0
@@ -543,12 +544,12 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0040784,Quinshon Judkins,RB,CLE,0.0
 11,00-0040785,Dohnte Meyers,WR,CIN,6.07
 11,00-0040867,Makai Lemon,WR,PHI,8.19
-11,00-0040870,Ja'Kobi Lane,WR,BAL,4.65
+11,00-0040870,Ja'Kobi Lane,WR,BAL,4.71
 11,00-0040876,Elijah Sarratt,WR,BAL,0.0
 11,00-0040878,Mike Washington Jr.,RB,LV,4.87
-11,00-0040879,Matthew Hibner,TE,BAL,3.25
+11,00-0040879,Matthew Hibner,TE,BAL,3.3
 11,00-0040886,Nicholas Singleton,RB,TEN,0.0
-11,00-0040887,Josh Cuevas,TE,BAL,2.69
+11,00-0040887,Josh Cuevas,TE,BAL,2.73
 11,00-0040890,Cyrus Allen,WR,KC,4.4
 11,00-0040894,Malik Benson,WR,LV,0.0
 11,00-0040899,Trey Smack,K,GB,0.0
@@ -558,7 +559,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0040959,Jaydn Ott,RB,KC,0.0
 11,00-0040967,Jacob De Jesus,WR,KC,6.24
 11,00-0040981,Joe Fagnano,QB,BAL,0.0
-11,00-0041013,Emmett Johnson,RB,KC,22.31
+11,00-0041013,Emmett Johnson,RB,KC,22.32
 11,00-0041027,Jeremiyah Love,RB,ARI,0.0
 11,00-0041029,Jordyn Tyson,WR,NO,7.74
 11,00-0041032,Kenyon Sadiq,TE,NYJ,4.16
@@ -610,11 +611,11 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0041483,Eli Stowers,TE,PHI,1.99
 11,00-0041489,Germie Bernard,WR,PIT,8.75
 11,00-0041490,Eli Heidenreich,RB,PIT,0.0
-11,00-0041496,Jonah Coleman,RB,DEN,17.26
+11,00-0041496,Jonah Coleman,RB,DEN,17.27
 11,00-0041503,Nate Boerkircher,TE,JAX,4.0
 11,00-0041511,Omar Cooper Jr.,WR,NYJ,0.0
 11,00-0041512,Jadarian Price,RB,SEA,0.0
-11,00-0041523,Caleb Douglas,WR,MIA,6.88
+11,00-0041523,Caleb Douglas,WR,MIA,6.87
 11,00-0041524,Will Kacmarek,TE,MIA,1.94
 11,00-0041525,Chris Bell,WR,MIA,0.0
 11,00-0041529,Kevin Coleman Jr.,WR,MIA,4.51
@@ -626,9 +627,9 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0041579,Seydou Traore,TE,MIA,0.78
 11,ARI DST,ARI DST,DST,ARI,1.49
 11,ATL DST,ATL DST,DST,ATL,0.0
-11,BAL DST,BAL DST,DST,BAL,2.34
+11,BAL DST,BAL DST,DST,BAL,2.31
 11,BUF DST,BUF DST,DST,BUF,9.67
-11,CAR DST,CAR DST,DST,CAR,4.91
+11,CAR DST,CAR DST,DST,CAR,4.85
 11,CHI DST,CHI DST,DST,CHI,7.8
 11,CIN DST,CIN DST,DST,CIN,4.68
 11,CLE DST,CLE DST,DST,CLE,0.0
