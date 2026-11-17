@@ -1,6 +1,5 @@
 """
 Partido de la semana para cada equipo de cada liga (Inicio, Alineación y Rival de la app).
-
 Corre después de modelo.py (lee data/modelo_<liga>.json) y agrega 3 tablas al mismo archivo:
 - App_SemResumen: Equipo, clave, valor (equipo, rival, récords, puntos proyectados con la alineación
   puesta en Sleeper y con la óptima, prob. de ganar, puntos que se ganan cambiando la alineación,
@@ -13,10 +12,8 @@ import json, os, re, sys
 from datetime import datetime, timezone
 from math import erf, sqrt
 import requests
-
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import modelo as m  # noqa: E402
-
 SD_DIF = 35.0  # desviación de la diferencia de puntos entre 2 equipos (calibrada con el Excel)
 URL_LIGA = "https://api.sleeper.app/v1/league/{lg}"
 URL_MATCH = "https://api.sleeper.app/v1/league/{lg}/matchups/{w}"
@@ -24,12 +21,9 @@ FLEX = {"FLEX": {"RB", "WR", "TE"}, "WRRB_FLEX": {"RB", "WR"}, "REC_FLEX": {"WR"
         "SUPER_FLEX": {"QB", "RB", "WR", "TE"}, "IDP_FLEX": set()}
 NO_TITULAR = {"BN", "IR", "TAXI"}
 EQ_NFL = {"LAR": "LA", "JAC": "JAX", "WSH": "WAS"}  # abreviaturas de Sleeper/ESPN -> nflverse
-
-
+SLP = {}  # jugadores de Sleeper (id -> datos); se llena en ids_sleeper() para tener nombres de respaldo
 def prob_normal(z):
     return 0.5 * (1 + erf(z / sqrt(2)))
-
-
 def json_url(nombre, url):
     if m.LOCAL:
         ruta = os.path.join(m.LOCAL, nombre + ".json")
@@ -41,10 +35,9 @@ def json_url(nombre, url):
     except Exception as e:
         print(f"AVISO: no pude bajar {url}: {e}")
         return None
-
-
 def ids_sleeper():
     slp = m.bajar("sl_players", "json") or {}
+    SLP.update(slp)
     sl_a = {sid: p["gsis_id"].strip() for sid, p in slp.items() if p.get("gsis_id")}
     ids = m.bajar("ids")
     if ids is not None and "sleeper_id" in ids and "gsis_id" in ids:
@@ -52,22 +45,24 @@ def ids_sleeper():
             if isinstance(g, str) and s == s and s is not None:
                 sl_a.setdefault(str(int(s)) if isinstance(s, float) else str(s), g)
     return sl_a
-
-
 def tabla_obj(t):
     if not t or len(t) < 2:
         return []
     h = t[0]
     return [dict(zip(h, r)) for r in t[1:]]
-
-
 def clave(sid, sl_a):
     sid = str(sid)
     if sid.isalpha():
         return ("LA" if sid == "LAR" else sid) + " DST"
     return sl_a.get(sid, sid)
-
-
+def datos_sleeper(sid):
+    """Nombre, posición y equipo NFL según Sleeper (respaldo cuando el modelo no tiene al jugador)."""
+    p = SLP.get(str(sid)) or {}
+    nm = p.get("full_name") or f"{p.get('first_name') or ''} {p.get('last_name') or ''}".strip() or str(sid)
+    pos = p.get("position") or ""
+    pos = "DST" if pos == "DEF" else pos
+    nfl = EQ_NFL.get(p.get("team") or "", p.get("team") or "")
+    return nm, pos, nfl
 def optima(jug, slots, puestos=None):
     """jug: lista de dicts con pos y proy. Los jugadores cuyo partido ya empezó ("lock") no se pueden
     mover: si son titulares en Sleeper se quedan en su puesto y si están en la banca no pueden entrar.
@@ -91,8 +86,6 @@ def optima(jug, slots, puestos=None):
                 libres.remove(j)
                 break
     return out
-
-
 def inicios(w):
     """{equipo NFL: hora de inicio (UTC)} de la semana w, desde el calendario de nflverse."""
     try:
@@ -102,12 +95,8 @@ def inicios(w):
     except Exception as e:
         print(f"Semana: sin calendario ({e}); no bloqueo jugadores que ya jugaron")
         return {}
-
-
 def total(lista):
     return round(sum(j["proy"] for j in lista if j), 2)
-
-
 def main():
     try:
         sl_a = ids_sleeper()
@@ -131,7 +120,9 @@ def main():
             if not slots or not rosters or not match:
                 print(f"Semana {liga}: faltan datos de Sleeper; no cambio nada")
                 continue
-            ps = {r["Clave"]: r for r in tabla_obj(out.get("App_ProySem"))}
+            ps_l = tabla_obj(out.get("App_ProySem"))
+            ps = {r["Clave"]: r for r in ps_l}
+            ps_nom = {(m.norm(str(r["Jugador"])), str(r.get("NFL", ""))): r for r in ps_l}  # respaldo por nombre
             rk = {r["Jugador"]: r for r in tabla_obj(out.get("App_RankSemana"))}
             nov = {r["Jugador"]: r for r in tabla_obj(out.get("App_Novedades"))}
             col = f"S{w}"
@@ -141,17 +132,23 @@ def main():
             pts = {}
             for mt in match:
                 pts.update(mt.get("players_points") or {})
-
+            sin_modelo = set()
             def jugador(sid):
                 k = clave(sid, sl_a)
                 r = ps.get(k)
-                nfl = k[:-4] if str(k).endswith(" DST") else (r or {}).get("NFL", "")
+                nm_s, pos_s, nfl_s = datos_sleeper(sid)
+                if not r and not str(k).endswith(" DST"):
+                    r = ps_nom.get((m.norm(nm_s), nfl_s))  # mismo nombre y equipo aunque el ID no cruce
+                    if r:
+                        k = r["Clave"]
+                nfl = k[:-4] if str(k).endswith(" DST") else (r or {}).get("NFL", "") or nfl_s
                 nfl = EQ_NFL.get(str(nfl), str(nfl))
                 hora = ini.get(nfl)
                 lock = bool(hora and hora <= ahora)  # su partido ya empezó: Sleeper no deja moverlo
                 real = pts.get(str(sid))
                 if not r:
-                    return {"k": k, "nombre": str(sid), "pos": "", "proy": float(real or 0), "rival": "",
+                    sin_modelo.add(f"{nm_s} ({pos_s or '?'} {nfl_s or '?'})")
+                    return {"k": k, "nombre": nm_s, "pos": pos_s, "proy": float(real or 0), "rival": "",
                             "prob": 1, "lock": lock}
                 x = rk.get(r["Jugador"], {})
                 pr = r.get(col)
@@ -160,7 +157,6 @@ def main():
                     pr = max(pr, float(real))  # ya jugó o está jugando: cuenta al menos lo que lleva
                 return {"k": k, "nombre": r["Jugador"], "pos": r["Pos"], "proy": pr,
                         "rival": x.get("Rival", ""), "prob": x.get("Prob", 1), "lock": lock}
-
             eq = {}
             for r in rosters:
                 rid = r["roster_id"]
@@ -177,7 +173,6 @@ def main():
             for e in eq.values():
                 e["opt"] = optima(e["plant"], slots, e.get("puestos"))
                 e["p_opt"], e["p_sl"] = total(e["opt"]), total(e.get("puestos") or [])
-
             res, alin, riv = [], [], []
             for rid, e in eq.items():
                 rv = [x for x in eq.values() if x is not e and x.get("mid") is not None and x.get("mid") == e.get("mid")]
@@ -220,8 +215,13 @@ def main():
                     enf = f"Partido parejo ({prob:.0%}): cada punto cuenta, revisa los titulares dudosos."
                 else:
                     enf = f"Vas abajo ({prob:.0%}): conviene arriesgar con jugadores de techo alto."
-                mi_k = next((j["nombre"] for j in e["opt"] if j and j["pos"] == "K"), "—")
-                mi_d = next((j["nombre"] for j in e["opt"] if j and j["pos"] == "DST"), "—")
+                def de_pos(p):  # óptima → titular en Sleeper → cualquiera del plantel
+                    for lista in (e["opt"], e.get("puestos") or [], e["plant"]):
+                        for j in lista:
+                            if j and j["pos"] == p:
+                                return j["nombre"]
+                    return "—"
+                mi_k, mi_d = de_pos("K"), de_pos("DST")
                 vals = dict(semana=w, equipo=e["nombre"], rival=rv["nombre"] if rv else "—",
                             record_yo=e["record"], record_rival=rv["record"] if rv else "",
                             proy_yo_optima=e["p_opt"], proy_yo_sleeper=e["p_sl"],
@@ -244,9 +244,10 @@ def main():
                 json.dump(out, f, ensure_ascii=False, separators=(",", ":"), default=str)
             con = sum(1 for e in eq.values() if e.get("mid") is not None)
             print(f"Semana {liga}: {len(eq)} equipos, {con} con partido en la semana {w}")
+            if sin_modelo:
+                print(f"Semana {liga}: {len(sin_modelo)} jugadores con dueño sin proyección del modelo: "
+                      + ", ".join(sorted(sin_modelo)))
         except Exception as ex:
             print(f"Semana {liga}: no pude armar el partido ({ex}); la app usa lo anterior")
-
-
 if __name__ == "__main__":
     main()
