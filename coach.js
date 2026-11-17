@@ -31,9 +31,23 @@ document.head.appendChild(st);
 function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
 function csv(rs){if(!rs||!rs.length)return '';var k=Object.keys(rs[0]);
  return k.join('|')+'\n'+rs.map(function(r){return k.map(function(c){var v=r[c];if(typeof v==='number')v=Math.round(v*10)/10;return String(v==null?'':v).replace(/[\n|]/g,' ')}).join('|')}).join('\n')}
-function contexto(){
+function nrm(s){return String(s==null?'':s).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+function tablasJug(){var d=D.datos;return Object.keys(d).filter(function(t){var rs=d[t];return /^App_/.test(t)&&Array.isArray(rs)&&rs.length&&rs[0]&&('Jugador' in rs[0])})}
+function mencionados(q){var Q=' '+nrm(q)+' ',hit={};
+ tablasJug().forEach(function(t){D.datos[t].forEach(function(r){var nm=r.Jugador;if(!nm||hit[nm])return;var f=nrm(nm);if(!f)return;
+  if(Q.indexOf(' '+f+' ')>=0){hit[nm]=2;return}
+  if(f.split(' ').some(function(w){return w.length>=4&&!/^(jr|sr|iii)$/.test(w)&&Q.indexOf(' '+w+' ')>=0}))hit[nm]=1})});
+ return Object.keys(hit).sort(function(x,y){return hit[y]-hit[x]}).slice(0,16)}
+function planteles(){var src=null;['App_ProySem','App_RankROS','App_RankSemana','App_Valor'].some(function(t){var rs=D.datos[t];if(rs&&rs.length&&('Dueño' in rs[0])){src=rs;return true}});
+ if(!src)return '';var g={};src.forEach(function(r){var o=r['Dueño'];if(!o||o==='Libre'||!r.Jugador)return;(g[o]=g[o]||[]).push(r.Jugador+' ('+(r.Pos||'')+')')});
+ return Object.keys(g).sort().map(function(o){return o+': '+g[o].join(', ')}).join('\n')}
+function contexto(q){
  if(typeof D==='undefined'||!D||!D.datos)return '';
- var out='Liga: '+(typeof LIGA!=='undefined'&&LIGA?LIGA:'(única)')+'\nDatos actualizados: '+(D.actualizado||'')+'\n';
+ var out='Liga: '+(typeof LIGA!=='undefined'&&LIGA?LIGA:'(única)')+'\nMi equipo: '+(typeof R!=='undefined'&&R&&R.equipo||'')+'\nSemana actual: '+(typeof R!=='undefined'&&R&&R.semana||'')+'\nDatos actualizados: '+(D.actualizado||'')+'\n';
+ var js=mencionados(q||'');
+ if(js.length){out+='\n## Jugadores mencionados en la pregunta (todas sus filas)\n';
+  tablasJug().forEach(function(t){var rs=D.datos[t].filter(function(r){return js.indexOf(r.Jugador)>=0});if(rs.length)out+='\n### '+t+'\n'+csv(rs)+'\n'})}
+ var pl=planteles();if(pl)out+='\n## Planteles de la liga (todos los equipos; quien no aparece está libre)\n'+pl+'\n';
  TABLAS.forEach(function(t){var rs=(D.datos[t[0]]||[]);if(!rs.length)return;var s='\n## '+t[0]+'\n'+csv(rs.slice(0,t[1]))+'\n';
   if(out.length+s.length<MAX)out+=s});
  return out}
@@ -44,7 +58,7 @@ function enviar(q){q=(q||'').trim();if(!q||ocupado)return;
  if(COACH_URL.indexOf('http')!==0){add('Falta pegar la URL del Worker en coach.js (COACH_URL).','e');return}
  ocupado=true;add(q,'u');var w=add('Pensando…','a');document.getElementById('cq').value='';
  fetch(COACH_URL,{method:'POST',headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({pregunta:q,historial:H.slice(-6),contexto:contexto()})})
+  body:JSON.stringify({pregunta:q,historial:H.slice(-6),contexto:contexto(q)})})
  .then(function(r){return r.text().then(function(t){var j;try{j=JSON.parse(t)}catch(e){throw new Error(/hello world/i.test(t)?'El Worker todavía tiene el código de ejemplo (Hello World). Pega worker.js en Edit code y toca Deploy.':'Respuesta rara del Worker ('+r.status+'): '+t.slice(0,150))}return j})},
   function(e){throw new Error('No llegué al Worker. Revisa la URL en coach.js y que ORIGEN en el Worker sea '+location.origin+' ('+e.message+')')})
  .then(function(j){if(j.error)throw new Error(j.error);w.innerHTML=esc(j.respuesta).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
