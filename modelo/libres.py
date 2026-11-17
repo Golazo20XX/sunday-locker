@@ -38,7 +38,8 @@ def num(x):
 
 def lineup(jug, slots, w):
     """Puntos de la alineación óptima de la semana w."""
-    js = [{"pos": j["pos"], "proy": num(j["S"].get(w)), "j": j} for j in jug]
+    js = [{"pos": j["pos"], "proy": num(j["S"].get(w)), "j": j,
+           "k": j.get("Clave") or j.get("Jugador"), "Jugador": j.get("Jugador")} for j in jug]
     return sm.optima(js, slots)
 
 
