@@ -133,6 +133,18 @@ def main():
             for mt in match:
                 pts.update(mt.get("players_points") or {})
             sin_modelo = set()
+            def estimar_k(nfl):
+                """Pateador sin datos del modelo (recién firmado): el puesto de K de su equipo vale
+                lo que el modelo le da al K de ese equipo; si no hay, la mediana de los 24 mejores K."""
+                eqp = [r for r in ps_l if str(r.get("NFL", "")) == nfl]
+                if eqp and all(not isinstance(r.get(col), (int, float)) or r.get(col) == 0 for r in eqp):
+                    return 0.0  # su equipo está en bye
+                kt = [float(r[col]) for r in eqp if r.get("Pos") == "K" and isinstance(r.get(col), (int, float))]
+                if kt:
+                    return max(kt)
+                ks = sorted([float(r[col]) for r in ps_l if r.get("Pos") == "K" and isinstance(r.get(col), (int, float))
+                             and r[col] > 0], reverse=True)[:24]
+                return ks[len(ks) // 2] if ks else None
             def jugador(sid):
                 k = clave(sid, sl_a)
                 r = ps.get(k)
@@ -147,8 +159,12 @@ def main():
                 lock = bool(hora and hora <= ahora)  # su partido ya empezó: Sleeper no deja moverlo
                 real = pts.get(str(sid))
                 if not r:
-                    sin_modelo.add(f"{nm_s} ({pos_s or '?'} {nfl_s or '?'})")
-                    return {"k": k, "nombre": nm_s, "pos": pos_s, "proy": float(real or 0), "rival": "",
+                    est = estimar_k(nfl_s) if pos_s == "K" else None
+                    sin_modelo.add(f"{nm_s} ({pos_s or '?'} {nfl_s or '?'})" + (f" → estimado {est:.1f}" if est is not None else ""))
+                    pr = est if est is not None else 0.0
+                    if lock and isinstance(real, (int, float)):
+                        pr = max(pr, float(real))
+                    return {"k": k, "nombre": nm_s, "pos": pos_s, "proy": pr, "rival": "",
                             "prob": 1, "lock": lock}
                 x = rk.get(r["Jugador"], {})
                 pr = r.get(col)
