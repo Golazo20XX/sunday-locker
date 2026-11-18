@@ -41,7 +41,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0033119,Jacoby Brissett,QB,BAL,16.55
 11,00-0033217,Mo Alie-Cox,TE,IND,0.0
 11,00-0033246,Johnny Mundt,TE,PHI,1.19
-11,00-0033280,Christian McCaffrey,RB,SF,16.75
+11,00-0033280,Christian McCaffrey,RB,SF,16.74
 11,00-0033288,George Kittle,TE,SF,9.87
 11,00-0033293,Aaron Jones,RB,MIN,9.18
 11,00-0033303,Harrison Butker,K,KC,7.03
@@ -107,7 +107,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0035229,T.J. Hockenson,TE,MIN,0.0
 11,00-0035249,Josh Oliver,TE,MIN,0.0
 11,00-0035250,Devin Singletary,RB,NYG,4.87
-11,00-0035261,Tony Pollard,RB,TEN,17.3
+11,00-0035261,Tony Pollard,RB,TEN,17.15
 11,00-0035269,Matt Gay,K,LV,6.37
 11,00-0035289,Gardner Minshew,QB,ARI,0.0
 11,00-0035298,Scott Miller,WR,CHI,3.26
@@ -195,6 +195,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0036906,Khalil Herbert,RB,ATL,0.0
 11,00-0036912,DeVonta Smith,WR,PHI,0.0
 11,00-0036919,Kenny Gainwell,RB,TB,7.31
+11,00-0036924,Michael Carter,RB,TEN,6.67
 11,00-0036945,Justin Fields,QB,KC,0.0
 11,00-0036959,Michael Bandy,WR,DEN,2.93
 11,00-0036963,Amon-Ra St. Brown,WR,DET,13.34
@@ -309,7 +310,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0038567,Chad Ryland,K,ARI,5.69
 11,00-0038573,Derius Davis,WR,LAC,1.22
 11,00-0038589,Josh Whyle,TE,GB,0.0
-11,00-0038597,Chase Brown,RB,CIN,16.78
+11,00-0038597,Chase Brown,RB,CIN,16.77
 11,00-0038606,Parker Washington,WR,JAX,11.27
 11,00-0038608,Kayshon Boutte,WR,HOU,8.37
 11,00-0038611,Chris Rodriguez Jr.,RB,JAX,5.21
@@ -350,7 +351,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0038996,Tucker Kraft,TE,GB,0.0
 11,00-0038997,Josh Downs,WR,KC,8.52
 11,00-0039021,Roschon Johnson,RB,CHI,6.04
-11,00-0039032,Tyjae Spears,RB,TEN,6.7
+11,00-0039032,Tyjae Spears,RB,TEN,6.62
 11,00-0039040,De'Von Achane,RB,MIA,0.0
 11,00-0039041,Elijah Higgins,TE,ARI,3.12
 11,00-0039050,Payne Durham,TE,TB,0.58
@@ -508,7 +509,7 @@ Semana,Clave,Jugador,Pos,NFL,Proy
 11,00-0040506,Myles Price,WR,MIN,4.0
 11,00-0040509,Ben Yurosek,TE,MIN,2.33
 11,00-0040522,Xavier Restrepo,WR,TEN,4.77
-11,00-0040547,Nate Carter,RB,KC,16.2
+11,00-0040547,Nate Carter,RB,KC,16.19
 11,00-0040556,Corey Kiner,RB,NE,0.0
 11,00-0040563,Efton Chism III,WR,NE,0.0
 11,00-0040568,Lan Larison,RB,NE,0.0
